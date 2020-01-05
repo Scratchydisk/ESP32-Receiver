@@ -1,0 +1,214 @@
+Sample monitor output from original sample for tracing BT calls
+
+I (71) boot: Chip Revision: 1
+I (72) boot_comm: chip revision: 1, min. bootloader chip revision: 0
+I (40) boot: ESP-IDF v3.3.1 2nd stage bootloader
+I (40) boot: compile time 11:37:20
+I (40) boot: Enabling RNG early entropy source...
+I (44) boot: SPI Speed      : 40MHz
+I (48) boot: SPI Mode       : DIO
+I (52) boot: SPI Flash Size : 2MB
+I (56) boot: Partition Table:
+I (60) boot: ## Label            Usage          Type ST Offset   Length
+I (67) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (75) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (82) boot:  2 factory          factory app      00 00 00010000 00100000
+I (90) boot: End of partition table
+I (94) boot_comm: chip revision: 1, min. application chip revision: 0
+I (101) esp_image: segment 0: paddr=0x00010020 vaddr=0x3f400020 size=0x28300 (164608) map
+I (168) esp_image: segment 1: paddr=0x00038328 vaddr=0x3ffbdb60 size=0x02a68 ( 10856) load
+I (172) esp_image: segment 2: paddr=0x0003ad98 vaddr=0x40080000 size=0x00400 (  1024) load
+0x40080000: _WindowOverflow4 at /home/stewart/esp/esp-idf/components/freertos/xtensa_vectors.S:1779
+
+I (175) esp_image: segment 3: paddr=0x0003b1a0 vaddr=0x40080400 size=0x04e70 ( 20080) load
+I (192) esp_image: segment 4: paddr=0x00040018 vaddr=0x400d0018 size=0x85290 (545424) map
+0x400d0018: _flash_cache_start at ??:?
+
+I (384) esp_image: segment 5: paddr=0x000c52b0 vaddr=0x40085270 size=0x0ce20 ( 52768) load
+0x40085270: get_rate_target_power at /home/aiqin/git_tree/chip7.1_phy/chip_7.1/board_code/app_test/pp/phy/phy_chip_v7_cal.c:2462 (discriminator 1)
+ (inlined by) tx_pwctrl_cal at /home/aiqin/git_tree/chip7.1_phy/chip_7.1/board_code/app_test/pp/phy/phy_chip_v7_cal.c:2548 (discriminator 1)
+
+I (416) boot: Loaded app from partition at offset 0x10000
+I (417) boot: Disabling RNG early entropy source...
+I (417) cpu_start: Pro cpu up.
+I (421) cpu_start: Application information:
+I (425) cpu_start: Project name:     esp-idf
+I (430) cpu_start: App version:      1
+I (435) cpu_start: Compile time:     Jan  4 2020 11:37:16
+I (441) cpu_start: ELF file SHA256:  bb215fe3dde49199...
+I (447) cpu_start: ESP-IDF:          v3.3.1
+I (452) cpu_start: Starting app cpu, entry point is 0x400810fc
+0x400810fc: call_start_cpu1 at /home/stewart/esp/esp-idf/components/esp32/cpu_start.c:269
+
+I (0) cpu_start: App cpu up.
+I (462) heap_init: Initializing. RAM available for dynamic allocation:
+I (469) heap_init: At 3FFAFF10 len 000000F0 (0 KiB): DRAM
+I (475) heap_init: At 3FFB6388 len 00001C78 (7 KiB): DRAM
+I (481) heap_init: At 3FFB9A20 len 00004108 (16 KiB): DRAM
+I (487) heap_init: At 3FFBDB5C len 00000004 (0 KiB): DRAM
+I (493) heap_init: At 3FFCE4F0 len 00011B10 (70 KiB): DRAM
+I (500) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (506) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (512) heap_init: At 40092090 len 0000DF70 (55 KiB): IRAM
+I (519) cpu_start: Pro cpu start user code
+I (201) cpu_start: Starting scheduler on PRO CPU.
+I (0) cpu_start: Starting scheduler on APP CPU.
+I (230) I2S: DMA Malloc info, datalen=blocksize=480, dma_buf_count=6
+I (230) I2S: PLL_D2: Req RATE: 96000, real rate: 4273.000, BITS: 24, CLKM: 13, BCK: 60, MCLK: 13.889, SCLK: 205104.000000, diva: 64, divb: 56
+I (240) BTDM_INIT: BT controller compile version [5aed448]
+I (250) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE
+I (360) phy: phy_version: 4102, 2fa7a43, Jul 15 2019, 13:06:06, 0, 0
+
+
+MATCH IDS
+=========
+I (161630) BT_AV: ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: 811323
+E (169630) BT_HCI: command_timed_out hci layer timeout waiting for response to a command. opcode: 0x41c
+=========
+
+CONNECTED DEVICE
+================
+I (180570) BT_AV: authentication success: [Swift 2 X (292)]0
+I (180570) BT_AV: 68 d0 13 13 24 51 
+================
+
+E (181620) BT_APPL: bta_av_rc_create ACP handle exist for shdl:0
+I (181620) BT_AV: A2DP connection state: Connecting, [68:d0:13:13:24:51]
+I (181640) BT_AV: A2DP audio stream configuration, codec type 0
+I (181650) I2S: DMA Malloc info, datalen=blocksize=240, dma_buf_count=6
+I (181650) I2S: PLL_D2: Req RATE: 44100, real rate: 2777.000, BITS: 16, CLKM: 30, BCK: 60, MCLK: 30.234, SCLK: 88864.000000, diva: 64, divb: 14
+I (181660) BT_AV: Configure audio player 21-15-2-35
+I (181670) BT_AV: Audio player configured, sample rate=44100
+W (181700) BT_APPL: new conn_srvc id:19, app_id:0
+I (181700) BT_AV: A2DP connection state: Connected, [68:d0:13:13:24:51]
+I (182020) BT_AV: AVRC conn_state evt: state 1, [68:d0:13:13:24:51]
+I (182030) BT_AV: AVRC remote features 4b
+I (182420) BT_AV: AVRC metadata rsp: attribute id 0x1, 
+I (182420) BT_AV: AVRC metadata rsp: attribute id 0x2, 
+I (182420) BT_AV: AVRC metadata rsp: attribute id 0x4, 
+I (182430) BT_AV: AVRC metadata rsp: attribute id 0x20, 
+I (251860) BT_LOG: bta_av_link_role_ok hndl:x41 role:1 conn_audio:x1 bits:1 features:x824b
+
+W (251870) BT_APPL: new conn_srvc id:19, app_id:1
+I (251870) BT_AV: A2DP audio state: Started
+I (251900) BT_AV: AVRC event notification: 2, param: 0
+I (251920) BT_AV: AVRC metadata rsp: attribute id 0x1, Reelin' In The Years
+I (251920) BT_AV: AVRC metadata rsp: attribute id 0x2, Steely Dan
+I (251930) BT_AV: AVRC metadata rsp: attribute id 0x4, Can't Buy A Thrill
+I (251930) BT_AV: AVRC metadata rsp: attribute id 0x20, 
+I (253980) BT_AV: Audio packet count 100
+I (255980) BT_AV: Audio packet count 200
+I (257990) BT_AV: Audio packet count 300
+I (259980) BT_AV: Audio packet count 400
+I (261980) BT_AV: Audio packet count 500
+I (263980) BT_AV: Audio packet count 600
+I (265980) BT_AV: Audio packet count 700
+I (267980) BT_AV: Audio packet count 800
+I (269980) BT_AV: Audio packet count 900
+I (271980) BT_AV: Audio packet count 1000
+I (273980) BT_AV: Audio packet count 1100
+I (275980) BT_AV: Audio packet count 1200
+I (277980) BT_AV: Audio packet count 1300
+I (279980) BT_AV: Audio packet count 1400
+I (281980) BT_AV: Audio packet count 1500
+I (283980) BT_AV: Audio packet count 1600
+I (285980) BT_AV: Audio packet count 1700
+I (287990) BT_AV: Audio packet count 1800
+I (289990) BT_AV: Audio packet count 1900
+I (291990) BT_AV: Audio packet count 2000
+I (293990) BT_AV: Audio packet count 2100
+I (295990) BT_AV: Audio packet count 2200
+I (297990) BT_AV: Audio packet count 2300
+I (299980) BT_AV: Audio packet count 2400
+I (301670) BT_AV: A2DP audio state: Suspended
+I (304070) BT_AV: AVRC event notification: 2, param: 0
+I (304120) BT_LOG: bta_av_link_role_ok hndl:x41 role:1 conn_audio:x1 bits:1 features:x824b
+
+I (304120) BT_AV: A2DP audio state: Started
+I (304160) BT_AV: AVRC metadata rsp: attribute id 0x1, Do It Again
+I (304160) BT_AV: AVRC metadata rsp: attribute id 0x2, Steely Dan
+I (304160) BT_AV: AVRC metadata rsp: attribute id 0x4, Can't Buy A Thrill
+I (304170) BT_AV: AVRC metadata rsp: attribute id 0x20, 
+I (306230) BT_AV: Audio packet count 100
+I (308230) BT_AV: Audio packet count 200
+I (310230) BT_AV: Audio packet count 300
+I (312230) BT_AV: Audio packet count 400
+I (314240) BT_AV: Audio packet count 500
+I (316240) BT_AV: Audio packet count 600
+I (318240) BT_AV: Audio packet count 700
+I (320240) BT_AV: Audio packet count 800
+I (320380) BT_AV: A2DP audio state: Suspended
+
+I (224038) BT_AV: AVRC event notification: 2, param: 0
+I (224248) BT_LOG: bta_av_link_role_ok hndl:x41 role:1 conn_audio:x1 bits:1 features:x824b
+
+I (224258) BT_AV: A2DP audio state: Started
+I (224258) BT_AV: AVRC metadata rsp: attribute id 0x1, 
+I (224258) Track: Track Title: 
+I (224268) BT_AV: AVRC metadata rsp: attribute id 0x2, 
+I (224268) Track: Artist: 
+I (224268) BT_AV: AVRC metadata rsp: attribute id 0x4, 
+I (224278) Track: Album: 
+I (224278) BT_AV: AVRC metadata rsp: attribute id 0x20, 
+I (224288) Track: Genre: 
+I (224308) BT_AV: AVRC event notification: 2, param: 0
+I (224348) BT_AV: AVRC metadata rsp: attribute id 0x1, Woke Up This Morning (Chosen One Mix)
+I (224348) Track: Track Title: Woke Up This Morning (Chosen One Mix)
+I (224358) BT_AV: AVRC metadata rsp: attribute id 0x2, Alabama 3
+I (224358) Track: Artist: Alabama 3
+I (224368) BT_AV: AVRC metadata rsp: attribute id 0x4, La Peste
+I (224368) Track: Album: La Peste
+I (224378) BT_AV: AVRC metadata rsp: attribute id 0x20, 
+I (224378) Track: Genre: 
+I (226338) BT_AV: Audio packet count 100
+I (228338) BT_AV: Audio packet count 200
+
+WITH ALL METADATA ATTRIBUTES ENABLED
+====================================
+
+
+W (230855) BT_APPL: new conn_srvc id:19, app_id:1
+I (230855) BT_AV: A2DP audio state: Started
+I (230875) BT_AV: AVRC event notification: 2, param: 0
+I (230895) BT_AV: AVRC metadata rsp: attribute id 0x1, Doctor Who
+I (230895) Track: Track Title: Doctor Who
+I (230895) BT_AV: AVRC metadata rsp: attribute id 0x2, Serpent Crest
+I (230905) Track: Artist: Serpent Crest
+I (230915) BT_AV: AVRC metadata rsp: attribute id 0x4, 
+I (230915) Track: Album: 
+I (230915) BT_AV: AVRC metadata rsp: attribute id 0x8, 0
+I (230925) Track: Track No.: 0
+I (230925) BT_AV: AVRC metadata rsp: attribute id 0x10, 0
+I (230935) Track: No. Tracks: 0
+I (230935) BT_AV: AVRC metadata rsp: attribute id 0x20, 
+I (230945) Track: Genre: 
+I (230945) BT_AV: AVRC metadata rsp: attribute id 0x40, 1827000   (ms = 30.45 mins)
+I (230955) Track: Play Time: 1827000
+I (232945) BT_AV: Audio packet count 100
+
+
+
+I (371225) BT_LOG: bta_av_link_role_ok hndl:x41 role:1 conn_audio:x1 bits:1 features:x824b
+
+I (371225) BT_AV: A2DP audio state: Started
+I (371255) BT_AV: AVRC event notification: 2, param: 0
+I (371325) BT_AV: AVRC metadata rsp: attribute id 0x1, Wuthering Heights
+I (371325) Track: Track Title: Wuthering Heights
+I (371325) BT_AV: AVRC metadata rsp: attribute id 0x2, Kate Bush
+I (371335) Track: Artist: Kate Bush
+I (371345) BT_AV: AVRC metadata rsp: attribute id 0x4, The Kick Inside
+I (371345) Track: Album: The Kick Inside
+I (371345) BT_AV: AVRC metadata rsp: attribute id 0x8, 0
+I (371355) Track: Track No.: 0
+I (371355) BT_AV: AVRC metadata rsp: attribute id 0x10, 0
+I (371365) Track: No. Tracks: 0
+I (371365) BT_AV: AVRC metadata rsp: attribute id 0x20, 
+I (371375) Track: Genre: 
+I (371375) BT_AV: AVRC metadata rsp: attribute id 0x40, 205000
+I (371385) Track: Play Time: 205000
+I (373345) BT_AV: Audio packet count 100
+
+
+
+
+
