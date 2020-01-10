@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := a2dp_sink
+PROJECT_NAME := esp_receiver
 
 include $(IDF_PATH)/make/project.mk
 

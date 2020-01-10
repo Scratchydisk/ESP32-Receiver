@@ -6,6 +6,10 @@
 #ifndef __UI_CONTROLLER_H__
 #define __UI_CONTROLLER_H__
 
+#include "ui_events.h"
 
+void ui_controller_init();
 
-#endif __UI_CONTROLLER_H__
+void ui_controller_dispatch(ui_msg_t *msg);
+
+#endif /* __UI_CONTROLLER_H__*/

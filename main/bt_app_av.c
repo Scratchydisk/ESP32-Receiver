@@ -20,6 +20,7 @@
 #include "esp_gap_bt_api.h"
 #include "esp_a2dp_api.h"
 #include "esp_avrc_api.h"
+#include "ui_task.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -113,6 +114,13 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         else if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_CONNECTED)
         {
             esp_bt_gap_set_scan_mode(ESP_BT_SCAN_MODE_NONE);
+
+          //  char strBda[20];
+          //  sprintf(strBda, "[%02x:%02x:%02x:%02x:%02x:%02x]", bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+            char * strBda = "Client";
+            esp_ui_param_t params;
+            ui_copyStrToTextParam(&params, (uint8_t *)strBda);
+            ui_work_dispatch(UI_EVT_CONNECTED, &params, 0, NULL);
         }
         break;
     }

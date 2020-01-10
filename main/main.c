@@ -33,6 +33,7 @@
 #include "esp_avrc_api.h"
 #include "driver/i2s.h"
 #include "ui_task.h"
+#include "ui_controller.h"
 
 /* event for handler "bt_av_hdl_stack_up */
 enum
@@ -40,17 +41,16 @@ enum
     BT_APP_EVT_STACK_UP = 0,
 };
 
-
 /* handler for bluetooth stack enabled events */
 static void bt_av_hdl_stack_evt(uint16_t event, void *p_param);
 
 void app_main()
 {
-     /* 
+    /* 
      * Display initialisation
      */
     /* Create UI task */
-    ui_task_start_up();
+//    ui_task_start_up();
 
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t err = nvs_flash_init();
@@ -143,10 +143,9 @@ void app_main()
     pin_code[2] = '3';
     pin_code[3] = '4';
     esp_bt_gap_set_pin(pin_type, 4, pin_code);
-
-   
-    
 }
+
+
 
 void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 {
@@ -157,6 +156,11 @@ void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
         if (param->auth_cmpl.stat == ESP_BT_STATUS_SUCCESS)
         {
             ESP_LOGI(BT_AV_TAG, "authentication success: %s", param->auth_cmpl.device_name);
+
+            esp_ui_param_t params;
+            ui_copyStrToTextParam(&params, param->auth_cmpl.device_name);
+            
+            ui_work_dispatch(UI_EVT_PAIRED, &params, 0, NULL);
             esp_log_buffer_hex(BT_AV_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
         }
         else
@@ -187,6 +191,7 @@ void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
     }
     return;
 }
+
 static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
 {
     ESP_LOGD(BT_AV_TAG, "%s evt %d", __func__, event);
@@ -195,7 +200,7 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
     case BT_APP_EVT_STACK_UP:
     {
         /* set up device name */
-        char *dev_name = "GrotSpeak";
+        char *dev_name = "Grotsoft_Reciever";
         esp_bt_dev_set_device_name(dev_name);
 
         esp_bt_gap_register_callback(bt_app_gap_cb);
