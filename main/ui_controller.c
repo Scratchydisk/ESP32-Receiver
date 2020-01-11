@@ -33,7 +33,7 @@ void ui_show_startup()
 
     const esp_app_desc_t appDesc = *esp_ota_get_app_description();
     char appVer[40];
-    sprintf(appVer, "Ver %s", appDesc.version);
+    sprintf(appVer, "SW %s", appDesc.version);
 
     drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 4, appVer);
 
