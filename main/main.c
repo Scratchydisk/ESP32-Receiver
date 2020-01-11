@@ -44,7 +44,6 @@ enum
 /* handler for bluetooth stack enabled events */
 static void bt_av_hdl_stack_evt(uint16_t event, void *p_param);
 
-
 void app_main()
 {
     /* 
@@ -70,14 +69,13 @@ void app_main()
 #endif
         .sample_rate = 44100,
         .bits_per_sample = 16,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           //2-channels
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT, //2-channels
         .communication_format = I2S_COMM_FORMAT_I2S_MSB,
         .dma_buf_count = 6,
         .dma_buf_len = 60,
         .intr_alloc_flags = 0,     //Default interrupt priority
         .tx_desc_auto_clear = true //Auto clear tx descriptor on underflow
     };
-
 
     i2s_driver_install(0, &i2s_config, 0, NULL);
 #ifdef CONFIG_A2DP_SINK_OUTPUT_INTERNAL_DAC
@@ -93,7 +91,6 @@ void app_main()
 
     i2s_set_pin(0, &pin_config);
 #endif
-
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_BLE));
 
@@ -146,10 +143,7 @@ void app_main()
     pin_code[2] = '3';
     pin_code[3] = '4';
     esp_bt_gap_set_pin(pin_type, 4, pin_code);
-
 }
-
-
 
 void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 {
@@ -162,9 +156,8 @@ void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
             ESP_LOGI(BT_AV_TAG, "authentication success: %s", param->auth_cmpl.device_name);
 
             esp_ui_param_t params;
-            ui_copyStrToTextParam(&params, param->auth_cmpl.device_name);
-            
-            ui_work_dispatch(UI_EVT_PAIRED, &params, 0, NULL);
+            ui_copyStrToTextParam(&params, (const uint8_t *)param->auth_cmpl.device_name);
+            ui_work_dispatch(UI_EVT_PAIRED, &params, sizeof(esp_ui_param_t), NULL);
             esp_log_buffer_hex(BT_AV_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
         }
         else
@@ -204,8 +197,12 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
     case BT_APP_EVT_STACK_UP:
     {
         /* set up device name */
-        char *dev_name = "Grotsoft_Reciever";
+        const char *dev_name = "Grotsoft_Reciever";
         esp_bt_dev_set_device_name(dev_name);
+
+        esp_ui_param_t params;
+        ui_copyStrToTextParam(&params, (const uint8_t *)dev_name);
+        ui_work_dispatch(UI_EVT_STACK_UP, &params, sizeof(esp_ui_param_t), NULL);
 
         esp_bt_gap_register_callback(bt_app_gap_cb);
 
@@ -213,7 +210,7 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
         esp_avrc_ct_init();
         esp_avrc_ct_register_callback(bt_app_rc_ct_cb);
         /* initialize AVRCP target */
-        assert (esp_avrc_tg_init() == ESP_OK);
+        assert(esp_avrc_tg_init() == ESP_OK);
         esp_avrc_tg_register_callback(bt_app_rc_tg_cb);
 
         esp_avrc_rn_evt_cap_mask_t evt_set = {0};
