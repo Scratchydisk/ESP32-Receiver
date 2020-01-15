@@ -47,8 +47,8 @@ void ui_showConnected(esp_ui_param_t *param)
     u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
 
     drawStrCentered(u8g2_GetMaxCharHeight(&u8g2), "Connected");
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "to");
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, (char *)param->text_rsp.evt_text);
+  //  drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "to");
+  //  drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, (char *)param->text_rsp.evt_text);
 
     u8g2_SendBuffer(&u8g2);
 }
