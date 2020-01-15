@@ -1,3 +1,4 @@
+#include <string.h>
 #include "ui_controller.h"
 
 #include <esp_log.h>
@@ -8,6 +9,18 @@
 #define UI_CONTROLLER_TAG "UI Cont"
 
 u8g2_t u8g2; // a structure which will contain all the data for one display
+
+#define MAX_LEN_TRACK_ATTRIBUTE 80
+
+typedef struct
+{
+    char playingTime[MAX_LEN_TRACK_ATTRIBUTE]; // change to integer later
+    char title[MAX_LEN_TRACK_ATTRIBUTE];
+    char artist[MAX_LEN_TRACK_ATTRIBUTE];
+    char album[MAX_LEN_TRACK_ATTRIBUTE];
+} ui_current_track_t;
+
+ui_current_track_t current_track;
 
 /** Drawing helpers **/
 
@@ -40,6 +53,19 @@ void ui_show_startup()
     u8g2_SendBuffer(&u8g2);
 }
 
+void ui_show_stackup(esp_ui_param_t *param)
+{
+    u8g2_ClearBuffer(&u8g2);
+
+    u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
+
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2), "Discoverable");
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "as");
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, (const char *)param->text_rsp.evt_text);
+
+    u8g2_SendBuffer(&u8g2);
+}
+
 void ui_showConnected(esp_ui_param_t *param)
 {
     u8g2_ClearBuffer(&u8g2);
@@ -52,6 +78,21 @@ void ui_showConnected(esp_ui_param_t *param)
 
     u8g2_SendBuffer(&u8g2);
 }
+
+void ui_show_track()
+{
+    u8g2_ClearBuffer(&u8g2);
+
+    u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
+
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2), current_track.title);
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, current_track.artist);
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, current_track.album);
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 4, current_track.playingTime);
+
+    u8g2_SendBuffer(&u8g2);
+}
+
 
 void ui_showPaired(esp_ui_param_t *param)
 {
@@ -72,22 +113,40 @@ void ui_showPaired(esp_ui_param_t *param)
  */
 void ui_controller_dispatch(ui_msg_t *msg)
 {
+    ESP_LOGI(UI_CONTROLLER_TAG, "Dispatch");
     esp_ui_param_t *param = (esp_ui_param_t *)(msg->param);
 
     switch (msg->event)
     {
+    case UI_EVT_STACK_UP:
+        ui_show_stackup(param);
+        break;
     case UI_EVT_CONNECTED:
         ui_showConnected(param);
         break;
     case UI_EVT_PAIRED:
+        ui_showPaired(param);
         break;
     case UI_EVT_TRK_ALBUM:
+    // TODO: add safeclib to solution and replace with strncpy_s
+        strncpy(current_track.album, (char*)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+        current_track.album[MAX_LEN_TRACK_ATTRIBUTE-1] = '\0';
+        ui_show_track();
         break;
     case UI_EVT_TRK_ARTIST:
+        strncpy(current_track.artist, (char*)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+        current_track.artist[MAX_LEN_TRACK_ATTRIBUTE-1] = '\0';
+        ui_show_track();
         break;
     case UI_EVT_TRK_PLAYINGTIME:
+        strncpy(current_track.playingTime, (char*)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+        current_track.playingTime[MAX_LEN_TRACK_ATTRIBUTE-1] = '\0';
+        ui_show_track();
         break;
     case UI_EVT_TRK_TITLE:
+        strncpy(current_track.title, (char*)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+        current_track.title[MAX_LEN_TRACK_ATTRIBUTE-1] = '\0';
+        ui_show_track();
         break;
     default:
         ui_show_startup();

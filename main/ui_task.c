@@ -120,8 +120,13 @@ static bool ui_send_msg(ui_msg_t *msg)
 
 void ui_copyStrToTextParam(esp_ui_param_t *params, const uint8_t *str)
 {
+    ESP_LOGI(UI_TASK_TAG, "StrParam: %s", (char*)str);
+
     params->text_rsp.evt_text_length = strlen((char *)str);
     params->text_rsp.evt_text = (uint8_t *)malloc(params->text_rsp.evt_text_length + 1);
     memcpy(params->text_rsp.evt_text, str, params->text_rsp.evt_text_length);
     params->text_rsp.evt_text[params->text_rsp.evt_text_length] = 0;
+
+    ESP_LOGI(UI_TASK_TAG, "UI Param: len %d, txt: %s", params->text_rsp.evt_text_length, 
+        params->text_rsp.evt_text);
 }
