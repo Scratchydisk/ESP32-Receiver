@@ -152,10 +152,10 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
 
             //  char strBda[20];
             //  sprintf(strBda, "[%02x:%02x:%02x:%02x:%02x:%02x]", bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
-            char *strBda = "Client";
-            esp_ui_param_t params;
-            ui_copyStrToTextParam(&params, (const uint8_t *)strBda);
-            ui_work_dispatch(UI_EVT_CONNECTED, &params, sizeof(esp_ui_param_t), NULL);
+            // char *strBda = "Client";
+            // esp_ui_param_t params;
+            // ui_copyStrToTextParam(&params, (const uint8_t *)strBda);
+            // ui_work_dispatch(UI_EVT_CONNECTED, &params, sizeof(esp_ui_param_t), NULL);
         }
         break;
     }
@@ -289,8 +289,8 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
     }
     case ESP_AVRC_CT_METADATA_RSP_EVT:
     {
-        esp_ui_param_t params;
-        ui_copyStrToTextParam(&params, (const uint8_t *)rc->meta_rsp.attr_text);
+        // esp_ui_param_t params;
+        // ui_copyStrToTextParam(&params, (const uint8_t *)rc->meta_rsp.attr_text);
 
         ESP_LOGI(BT_AV_TAG, "AVRC metadata rsp: attribute id 0x%x, %s", rc->meta_rsp.attr_id, rc->meta_rsp.attr_text);
         switch (rc->meta_rsp.attr_id)
@@ -298,19 +298,19 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
         case ESP_AVRC_MD_ATTR_TITLE:
         {
             ESP_LOGI("Track", "Track Title: %s", rc->meta_rsp.attr_text);
-            ui_work_dispatch(UI_EVT_TRK_TITLE, &params, sizeof(esp_ui_param_t), NULL);
+        //    ui_work_dispatch(UI_EVT_TRK_TITLE, &params, sizeof(esp_ui_param_t), NULL);
             break;
         }
         case ESP_AVRC_MD_ATTR_ARTIST:
         {
             ESP_LOGI("Track", "Artist: %s", rc->meta_rsp.attr_text);
-            ui_work_dispatch(UI_EVT_TRK_ARTIST, &params, sizeof(esp_ui_param_t), NULL);
+        //    ui_work_dispatch(UI_EVT_TRK_ARTIST, &params, sizeof(esp_ui_param_t), NULL);
             break;
         }
         case ESP_AVRC_MD_ATTR_ALBUM:
         {
             ESP_LOGI("Track", "Album: %s", rc->meta_rsp.attr_text);
-            ui_work_dispatch(UI_EVT_TRK_ARTIST, &params, sizeof(esp_ui_param_t), NULL);
+        //    ui_work_dispatch(UI_EVT_TRK_ARTIST, &params, sizeof(esp_ui_param_t), NULL);
             break;
         }
         case ESP_AVRC_MD_ATTR_GENRE:
@@ -326,7 +326,7 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
         case ESP_AVRC_MD_ATTR_PLAYING_TIME:
         {
             ESP_LOGI("Track", "Play Time: %s", rc->meta_rsp.attr_text);
-            ui_work_dispatch(UI_EVT_TRK_PLAYINGTIME, &params, sizeof(esp_ui_param_t), NULL);
+        //    ui_work_dispatch(UI_EVT_TRK_PLAYINGTIME, &params, sizeof(esp_ui_param_t), NULL);
             break;
         }
         case ESP_AVRC_MD_ATTR_TRACK_NUM:

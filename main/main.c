@@ -50,7 +50,7 @@ void app_main()
      * Display initialisation
      */
     /* Create UI task */
-    ui_task_start_up();
+    //    ui_task_start_up();
 
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t err = nvs_flash_init();
@@ -143,6 +143,8 @@ void app_main()
     pin_code[2] = '3';
     pin_code[3] = '4';
     esp_bt_gap_set_pin(pin_type, 4, pin_code);
+
+    ESP_LOGI(BT_AV_TAG, "Finished app_main()");
 }
 
 void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
@@ -155,10 +157,10 @@ void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
         {
             ESP_LOGI(BT_AV_TAG, "authentication success: %s", param->auth_cmpl.device_name);
 
-            esp_ui_param_t params;
-            ui_copyStrToTextParam(&params, (const uint8_t *)param->auth_cmpl.device_name);
-            ui_work_dispatch(UI_EVT_PAIRED, &params, sizeof(esp_ui_param_t), NULL);
-            esp_log_buffer_hex(BT_AV_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
+            //     esp_ui_param_t params;
+            //     ui_copyStrToTextParam(&params, (const uint8_t *)param->auth_cmpl.device_name);
+            //     ui_work_dispatch(UI_EVT_PAIRED, &params, sizeof(esp_ui_param_t), NULL);
+            //     esp_log_buffer_hex(BT_AV_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
         }
         else
         {
@@ -200,9 +202,9 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
         const char *dev_name = "Grotsoft_Reciever";
         esp_bt_dev_set_device_name(dev_name);
 
-        esp_ui_param_t params;
-        ui_copyStrToTextParam(&params, (const uint8_t *)dev_name);
-        ui_work_dispatch(UI_EVT_STACK_UP, &params, sizeof(esp_ui_param_t), NULL);
+        // esp_ui_param_t params;
+        // ui_copyStrToTextParam(&params, (const uint8_t *)dev_name);
+        // ui_work_dispatch(UI_EVT_STACK_UP, &params, sizeof(esp_ui_param_t), NULL);
 
         esp_bt_gap_register_callback(bt_app_gap_cb);
 
@@ -224,6 +226,7 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
 
         /* set discoverable and connectable mode, wait to be connected */
         esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
+        ESP_LOGI(BT_AV_TAG, "End stack up");
         break;
     }
     default:

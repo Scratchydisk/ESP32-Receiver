@@ -10,7 +10,7 @@
 
 u8g2_t u8g2; // a structure which will contain all the data for one display
 
-#define MAX_LEN_TRACK_ATTRIBUTE 80;
+#define MAX_LEN_TRACK_ATTRIBUTE 80
 
 typedef struct
 {
@@ -128,19 +128,24 @@ void ui_controller_dispatch(ui_msg_t *msg)
         ui_showPaired(param);
         break;
     case UI_EVT_TRK_ALBUM:
-        strncpy_s(current_track.album, MAX_LEN_TRACK_ATTRIBUTE, param->text_rsp.evt_text, _TRUNCATE);
+    // TODO: add safeclib to solution and replace with strncpy_s
+        strncpy(current_track.album, (char*)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+        current_track.album[MAX_LEN_TRACK_ATTRIBUTE-1] = '\0';
         ui_show_track();
         break;
     case UI_EVT_TRK_ARTIST:
-        strncpy_s(current_track.artist, MAX_LEN_TRACK_ATTRIBUTE, param->text_rsp.evt_text, _TRUNCATE);
+        strncpy(current_track.artist, (char*)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+        current_track.artist[MAX_LEN_TRACK_ATTRIBUTE-1] = '\0';
         ui_show_track();
         break;
     case UI_EVT_TRK_PLAYINGTIME:
-        strncpy_s(current_track.playingTime, MAX_LEN_TRACK_ATTRIBUTE, param->text_rsp.evt_text, _TRUNCATE);
+        strncpy(current_track.playingTime, (char*)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+        current_track.playingTime[MAX_LEN_TRACK_ATTRIBUTE-1] = '\0';
         ui_show_track();
         break;
     case UI_EVT_TRK_TITLE:
-        strncpy_s(current_track.title, MAX_LEN_TRACK_ATTRIBUTE, param->text_rsp.evt_text, _TRUNCATE);
+        strncpy(current_track.title, (char*)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+        current_track.title[MAX_LEN_TRACK_ATTRIBUTE-1] = '\0';
         ui_show_track();
         break;
     default:
