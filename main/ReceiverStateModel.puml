@@ -1,0 +1,29 @@
+@startuml BT Receiver
+
+
+[*] --> Disconnected : Initialise()
+
+state Disconnected  {
+
+    state initialise_fork <<fork>>
+    [*] --> initialise_fork
+    initialise_fork --> Discoverable
+    initialise_fork --> Connectable
+
+    Discoverable --> Pairing
+    Pairing --> Discoverable
+
+    Connectable --> Authenticating
+    Authenticating --> Connectable : [Failed]
+    Authenticating -r-> Connected : [Success]
+
+}
+
+state Connected {
+    [*] --> AwaitingCommand
+
+}
+
+Connected -l-> Disconnected : Disconnect()
+
+@enduml

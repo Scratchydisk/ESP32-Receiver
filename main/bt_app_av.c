@@ -141,7 +141,6 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         ESP_LOGI(BT_AV_TAG, "A2DP connection state: %s, [%02x:%02x:%02x:%02x:%02x:%02x]",
                  s_a2d_conn_state_str[a2d->conn_stat.state], bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
 
-        //        char *strBda = "Client";
         esp_ui_param_t params;
         ui_copyStrToTextParam(&params, (const uint8_t *)s_a2d_conn_state_str[a2d->conn_stat.state]);
         ui_work_dispatch(UI_EVT_CONNECTED, &params, sizeof(esp_ui_param_t), NULL);
