@@ -48,7 +48,7 @@ static const char *s_a2d_conn_state_str[] = {"Disconnected", "Connecting", "Conn
 static const char *s_a2d_audio_state_str[] = {"Suspended", "Stopped", "Started"};
 static esp_avrc_rn_evt_cap_mask_t s_avrc_peer_rn_cap;
 static _lock_t s_volume_lock;
-static xTaskHandle s_vcs_task_hdl = NULL;
+//static xTaskHandle s_vcs_task_hdl = NULL;
 static uint8_t s_volume = 0;
 static bool s_volume_notify;
 
@@ -140,6 +140,12 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         uint8_t *bda = a2d->conn_stat.remote_bda;
         ESP_LOGI(BT_AV_TAG, "A2DP connection state: %s, [%02x:%02x:%02x:%02x:%02x:%02x]",
                  s_a2d_conn_state_str[a2d->conn_stat.state], bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+
+        //        char *strBda = "Client";
+        esp_ui_param_t params;
+        ui_copyStrToTextParam(&params, (const uint8_t *)s_a2d_conn_state_str[a2d->conn_stat.state]);
+        ui_work_dispatch(UI_EVT_CONNECTED, &params, sizeof(esp_ui_param_t), NULL);
+
         if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_DISCONNECTED)
         {
             esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
@@ -150,12 +156,8 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
             esp_bt_gap_set_scan_mode(ESP_BT_NON_CONNECTABLE, ESP_BT_NON_DISCOVERABLE);
             bt_i2s_task_start_up();
 
-            //  char strBda[20];
-            //  sprintf(strBda, "[%02x:%02x:%02x:%02x:%02x:%02x]", bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
-            // char *strBda = "Client";
-            // esp_ui_param_t params;
-            // ui_copyStrToTextParam(&params, (const uint8_t *)strBda);
-            // ui_work_dispatch(UI_EVT_CONNECTED, &params, sizeof(esp_ui_param_t), NULL);
+            //            char strBda[20];
+            //            sprintf(strBda, "[%02x:%02x:%02x:%02x:%02x:%02x]", bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
         }
         break;
     }
@@ -231,8 +233,12 @@ static void bt_av_playback_changed(void)
     }
 }
 
-static void bt_av_play_pos_changed(void)
+static void bt_av_play_pos_changed(uint32_t position)
 {
+    esp_ui_param_t params;
+    params.int_rsp.evt_value = position;
+    ui_work_dispatch(UI_EVT_PLAY_POS_CHANGED, &params, sizeof(esp_ui_param_t), NULL);
+
     if (esp_avrc_rn_evt_bit_mask_operation(ESP_AVRC_BIT_MASK_OP_TEST, &s_avrc_peer_rn_cap,
                                            ESP_AVRC_RN_PLAY_POS_CHANGED))
     {
@@ -253,7 +259,7 @@ void bt_av_notify_evt_handler(uint8_t event_id, esp_avrc_rn_param_t *event_param
         break;
     case ESP_AVRC_RN_PLAY_POS_CHANGED:
         ESP_LOGI(BT_AV_TAG, "Play position changed: %d-ms", event_parameter->play_pos);
-        bt_av_play_pos_changed();
+        bt_av_play_pos_changed(event_parameter->play_pos);
         break;
     }
 }
@@ -289,60 +295,51 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
     }
     case ESP_AVRC_CT_METADATA_RSP_EVT:
     {
-        // esp_ui_param_t params;
-        // ui_copyStrToTextParam(&params, (const uint8_t *)rc->meta_rsp.attr_text);
+        esp_ui_param_t params;
 
         ESP_LOGI(BT_AV_TAG, "AVRC metadata rsp: attribute id 0x%x, %s", rc->meta_rsp.attr_id, rc->meta_rsp.attr_text);
         switch (rc->meta_rsp.attr_id)
         {
         case ESP_AVRC_MD_ATTR_TITLE:
-        {
             ESP_LOGI("Track", "Track Title: %s", rc->meta_rsp.attr_text);
-        //    ui_work_dispatch(UI_EVT_TRK_TITLE, &params, sizeof(esp_ui_param_t), NULL);
+            ui_copyStrToTextParam(&params, (const uint8_t *)rc->meta_rsp.attr_text);
+            ui_work_dispatch(UI_EVT_TRK_TITLE, &params, sizeof(esp_ui_param_t), NULL);
             break;
-        }
         case ESP_AVRC_MD_ATTR_ARTIST:
-        {
             ESP_LOGI("Track", "Artist: %s", rc->meta_rsp.attr_text);
-        //    ui_work_dispatch(UI_EVT_TRK_ARTIST, &params, sizeof(esp_ui_param_t), NULL);
+            ui_copyStrToTextParam(&params, (const uint8_t *)rc->meta_rsp.attr_text);
+            ui_work_dispatch(UI_EVT_TRK_ARTIST, &params, sizeof(esp_ui_param_t), NULL);
             break;
-        }
         case ESP_AVRC_MD_ATTR_ALBUM:
-        {
             ESP_LOGI("Track", "Album: %s", rc->meta_rsp.attr_text);
-        //    ui_work_dispatch(UI_EVT_TRK_ARTIST, &params, sizeof(esp_ui_param_t), NULL);
+         //   ui_copyStrToTextParam(&params, (const uint8_t *)rc->meta_rsp.attr_text);
+         //   ui_work_dispatch(UI_EVT_TRK_ARTIST, &params, sizeof(esp_ui_param_t), NULL);
             break;
-        }
         case ESP_AVRC_MD_ATTR_GENRE:
-        {
             ESP_LOGI("Track", "Genre: %s", rc->meta_rsp.attr_text);
             break;
-        }
         case ESP_AVRC_MD_ATTR_NUM_TRACKS:
-        {
             ESP_LOGI("Track", "No. Tracks: %s", rc->meta_rsp.attr_text);
             break;
-        }
         case ESP_AVRC_MD_ATTR_PLAYING_TIME:
-        {
             ESP_LOGI("Track", "Play Time: %s", rc->meta_rsp.attr_text);
-        //    ui_work_dispatch(UI_EVT_TRK_PLAYINGTIME, &params, sizeof(esp_ui_param_t), NULL);
+            params.int_rsp.evt_value = (uint32_t)atol((const char *)rc->meta_rsp.attr_text);
+            ui_work_dispatch(UI_EVT_TRK_PLAYINGTIME, &params, sizeof(esp_ui_param_t), NULL);
             break;
-        }
         case ESP_AVRC_MD_ATTR_TRACK_NUM:
-        {
             ESP_LOGI("Track", "Track No.: %s", rc->meta_rsp.attr_text);
             break;
-        }
         default:
-        {
             ESP_LOGI("Track", "Other: %s", rc->meta_rsp.attr_text);
             break;
+        } //rc->meta_rsp.attr_id
+
+        if (rc->meta_rsp.attr_text != NULL)
+        {
+            free(rc->meta_rsp.attr_text);
         }
-        }
-        free(rc->meta_rsp.attr_text);
         break;
-    }
+    } // ESP_AVRC_CT_METADATA_RSP_EVT
     case ESP_AVRC_CT_CHANGE_NOTIFY_EVT:
     {
         ESP_LOGI(BT_RC_CT_TAG, "AVRC event notification: %d", rc->change_ntf.event_id);
@@ -361,7 +358,7 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
         s_avrc_peer_rn_cap.bits = rc->get_rn_caps_rsp.evt_set.bits;
         bt_av_new_track();
         bt_av_playback_changed();
-        bt_av_play_pos_changed();
+        bt_av_play_pos_changed(0);
         break;
     }
     default:
@@ -378,6 +375,8 @@ static void volume_set_by_controller(uint8_t volume)
     _lock_release(&s_volume_lock);
 }
 
+/*
+// Set by ESP32 device rather than client
 static void volume_set_by_local_host(uint8_t volume)
 {
     ESP_LOGI(BT_RC_TG_TAG, "Volume is set locally to: %d%%", (uint32_t)volume * 100 / 0x7f);
@@ -393,7 +392,9 @@ static void volume_set_by_local_host(uint8_t volume)
         s_volume_notify = false;
     }
 }
+*/
 
+/*
 static void volume_change_simulation(void *arg)
 {
     ESP_LOGI(BT_RC_TG_TAG, "start volume change simulation");
@@ -406,6 +407,7 @@ static void volume_change_simulation(void *arg)
         volume_set_by_local_host(volume);
     }
 }
+*/
 
 static void bt_av_hdl_avrc_tg_evt(uint16_t event, void *p_param)
 {
@@ -421,11 +423,11 @@ static void bt_av_hdl_avrc_tg_evt(uint16_t event, void *p_param)
         if (rc->conn_stat.connected)
         {
             // create task to simulate volume change
-            xTaskCreate(volume_change_simulation, "vcsT", 2048, NULL, 5, &s_vcs_task_hdl);
+            //    xTaskCreate(volume_change_simulation, "vcsT", 2048, NULL, 5, &s_vcs_task_hdl);
         }
         else
         {
-            vTaskDelete(s_vcs_task_hdl);
+            //    vTaskDelete(s_vcs_task_hdl);
             ESP_LOGI(BT_RC_TG_TAG, "Stop volume change simulation");
         }
         break;
@@ -446,10 +448,11 @@ static void bt_av_hdl_avrc_tg_evt(uint16_t event, void *p_param)
         ESP_LOGI(BT_RC_TG_TAG, "AVRC register event notification: %d, param: 0x%x", rc->reg_ntf.event_id, rc->reg_ntf.event_parameter);
         if (rc->reg_ntf.event_id == ESP_AVRC_RN_VOLUME_CHANGE)
         {
-            s_volume_notify = true;
-            esp_avrc_rn_param_t rn_param;
-            rn_param.volume = s_volume;
-            esp_avrc_tg_send_rn_rsp(ESP_AVRC_RN_VOLUME_CHANGE, ESP_AVRC_RN_RSP_INTERIM, &rn_param);
+            ESP_LOGI(BT_RC_CT_TAG, "Volume Change event ID ignored");
+            // s_volume_notify = true;
+            // esp_avrc_rn_param_t rn_param;
+            // rn_param.volume = s_volume;
+            // esp_avrc_tg_send_rn_rsp(ESP_AVRC_RN_VOLUME_CHANGE, ESP_AVRC_RN_RSP_INTERIM, &rn_param);
         }
         break;
     }

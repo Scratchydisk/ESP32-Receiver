@@ -50,7 +50,7 @@ void app_main()
      * Display initialisation
      */
     /* Create UI task */
-    //    ui_task_start_up();
+    ui_task_start_up();
 
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t err = nvs_flash_init();
@@ -67,8 +67,8 @@ void app_main()
 #else
         .mode = I2S_MODE_MASTER | I2S_MODE_TX, // Only TX
 #endif
-        .sample_rate = 44100,
-        .bits_per_sample = 16,
+        .sample_rate = 96000, // 44100,
+        .bits_per_sample = 24,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT, //2-channels
         .communication_format = I2S_COMM_FORMAT_I2S_MSB,
         .dma_buf_count = 6,
@@ -157,10 +157,10 @@ void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
         {
             ESP_LOGI(BT_AV_TAG, "authentication success: %s", param->auth_cmpl.device_name);
 
-            //     esp_ui_param_t params;
-            //     ui_copyStrToTextParam(&params, (const uint8_t *)param->auth_cmpl.device_name);
-            //     ui_work_dispatch(UI_EVT_PAIRED, &params, sizeof(esp_ui_param_t), NULL);
-            //     esp_log_buffer_hex(BT_AV_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
+            esp_ui_param_t params;
+            ui_copyStrToTextParam(&params, (const uint8_t *)param->auth_cmpl.device_name);
+            ui_work_dispatch(UI_EVT_PAIRED, &params, sizeof(esp_ui_param_t), NULL);
+            esp_log_buffer_hex(BT_AV_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
         }
         else
         {
@@ -199,12 +199,12 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
     case BT_APP_EVT_STACK_UP:
     {
         /* set up device name */
-        const char *dev_name = "Grotsoft_Reciever";
+        const char *dev_name = "Grotsoft_Receiver";
         esp_bt_dev_set_device_name(dev_name);
 
-        // esp_ui_param_t params;
-        // ui_copyStrToTextParam(&params, (const uint8_t *)dev_name);
-        // ui_work_dispatch(UI_EVT_STACK_UP, &params, sizeof(esp_ui_param_t), NULL);
+        esp_ui_param_t params;
+        ui_copyStrToTextParam(&params, (const uint8_t *)dev_name);
+        ui_work_dispatch(UI_EVT_STACK_UP, &params, sizeof(esp_ui_param_t), NULL);
 
         esp_bt_gap_register_callback(bt_app_gap_cb);
 
