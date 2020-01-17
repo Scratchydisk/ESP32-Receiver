@@ -12,12 +12,13 @@ u8g2_t u8g2; // a structure which will contain all the data for one display
 
 #define MAX_LEN_TRACK_ATTRIBUTE 80
 
-typedef struct
+typedef struct ui_current_track
 {
-    char playingTime[MAX_LEN_TRACK_ATTRIBUTE]; // change to integer later
     char title[MAX_LEN_TRACK_ATTRIBUTE];
     char artist[MAX_LEN_TRACK_ATTRIBUTE];
     char album[MAX_LEN_TRACK_ATTRIBUTE];
+    uint32_t playingTime;
+    uint32_t currentPosition;
 } ui_current_track_t;
 
 ui_current_track_t current_track;
@@ -72,9 +73,9 @@ void ui_showConnected(esp_ui_param_t *param)
 
     u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
 
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2), "Connected");
-  //  drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "to");
-  //  drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, (char *)param->text_rsp.evt_text);
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, (char *)param->text_rsp.evt_text);
+    //  drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "to");
+    //  drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, (char *)param->text_rsp.evt_text);
 
     u8g2_SendBuffer(&u8g2);
 }
@@ -85,14 +86,27 @@ void ui_show_track()
 
     u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
 
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2), current_track.title);
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, current_track.artist);
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, current_track.album);
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 4, current_track.playingTime);
+    if (strcmp(current_track.title, "") == 0)
+    {
+        drawStrCentered(u8g2_GetMaxCharHeight(&u8g2), "Playing...");
+    }
+    else
+    {
+        drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 1, current_track.artist);
+        drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, current_track.title);
+        drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, current_track.album);
 
+        char percentStr[5] = "--";
+        if (current_track.playingTime > 100)
+        {
+            // Times in ms, don't need this resolution, rather than mul numerator by 100, divide denominator by 100
+            sprintf(percentStr, "%d%%", current_track.currentPosition / (current_track.playingTime / 100));
+        }
+        drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 4, percentStr);
+        // new fn to draw progress
+    }
     u8g2_SendBuffer(&u8g2);
 }
-
 
 void ui_showPaired(esp_ui_param_t *param)
 {
@@ -113,6 +127,8 @@ void ui_showPaired(esp_ui_param_t *param)
  */
 void ui_controller_dispatch(ui_msg_t *msg)
 {
+    uint8_t copyOffset;
+
     ESP_LOGI(UI_CONTROLLER_TAG, "Dispatch");
     esp_ui_param_t *param = (esp_ui_param_t *)(msg->param);
 
@@ -127,25 +143,32 @@ void ui_controller_dispatch(ui_msg_t *msg)
     case UI_EVT_PAIRED:
         ui_showPaired(param);
         break;
+    case UI_EVT_PLAY_POS_CHANGED:
+        current_track.currentPosition = param->int_rsp.evt_value;
+        ui_show_track();
+        break;
     case UI_EVT_TRK_ALBUM:
-    // TODO: add safeclib to solution and replace with strncpy_s
-        strncpy(current_track.album, (char*)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
-        current_track.album[MAX_LEN_TRACK_ATTRIBUTE-1] = '\0';
+        // Some album names have extraneous '/'s as their first char, remove this
+       // copyOffset = (char)param->text_rsp.evt_text[0] == '/' ? 1 : 0;
+        //strncpy(current_track.album, (char *)(param->text_rsp.evt_text + copyOffset), MAX_LEN_TRACK_ATTRIBUTE);
+        strncpy(current_track.album, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+        current_track.album[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
         ui_show_track();
         break;
     case UI_EVT_TRK_ARTIST:
-        strncpy(current_track.artist, (char*)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
-        current_track.artist[MAX_LEN_TRACK_ATTRIBUTE-1] = '\0';
+        strncpy(current_track.artist, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+        current_track.artist[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
         ui_show_track();
         break;
     case UI_EVT_TRK_PLAYINGTIME:
-        strncpy(current_track.playingTime, (char*)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
-        current_track.playingTime[MAX_LEN_TRACK_ATTRIBUTE-1] = '\0';
+        current_track.playingTime = param->int_rsp.evt_value;
+        ESP_LOGI(UI_CONTROLLER_TAG, "Playing time (param): %d", param->int_rsp.evt_value);
+        ESP_LOGI(UI_CONTROLLER_TAG, "Playing time: %d", current_track.playingTime);
         ui_show_track();
         break;
     case UI_EVT_TRK_TITLE:
-        strncpy(current_track.title, (char*)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
-        current_track.title[MAX_LEN_TRACK_ATTRIBUTE-1] = '\0';
+        strncpy(current_track.title, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+        current_track.title[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
         ui_show_track();
         break;
     default:
