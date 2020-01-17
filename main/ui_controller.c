@@ -12,6 +12,15 @@ u8g2_t u8g2; // a structure which will contain all the data for one display
 
 #define MAX_LEN_TRACK_ATTRIBUTE 80
 
+typedef enum
+{
+    RCVR_STATE_DISCONNECTED,
+    RCVR_STATE_SUSPENDED,
+    RCVR_STATE_RUNNING
+} ui_rcvr_state_t;
+
+ui_rcvr_state_t rcvr_state;
+
 typedef struct ui_current_track
 {
     char title[MAX_LEN_TRACK_ATTRIBUTE];
@@ -67,7 +76,7 @@ void ui_show_stackup(esp_ui_param_t *param)
     u8g2_SendBuffer(&u8g2);
 }
 
-void ui_showConnected(esp_ui_param_t *param)
+void ui_show_connected(esp_ui_param_t *param)
 {
     u8g2_ClearBuffer(&u8g2);
 
@@ -138,7 +147,10 @@ void ui_controller_dispatch(ui_msg_t *msg)
         ui_show_stackup(param);
         break;
     case UI_EVT_CONNECTED:
-        ui_showConnected(param);
+        ui_show_connected(param);
+        break;
+    case UI_EVT_DISCONNECTED:
+        ui_show_connected(param);
         break;
     case UI_EVT_PAIRED:
         ui_showPaired(param);
@@ -149,7 +161,7 @@ void ui_controller_dispatch(ui_msg_t *msg)
         break;
     case UI_EVT_TRK_ALBUM:
         // Some album names have extraneous '/'s as their first char, remove this
-       // copyOffset = (char)param->text_rsp.evt_text[0] == '/' ? 1 : 0;
+        // copyOffset = (char)param->text_rsp.evt_text[0] == '/' ? 1 : 0;
         //strncpy(current_track.album, (char *)(param->text_rsp.evt_text + copyOffset), MAX_LEN_TRACK_ATTRIBUTE);
         strncpy(current_track.album, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
         current_track.album[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
@@ -207,7 +219,6 @@ void ui_controller_init()
     ui_show_startup();
 }
 
-const char *TAG = UI_CONTROLLER_TAG;
 
 void task_test_SSD1306i2c(void *ignore)
 {
