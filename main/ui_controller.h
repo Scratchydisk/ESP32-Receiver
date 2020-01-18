@@ -12,4 +12,6 @@ void ui_controller_init();
 
 void ui_controller_dispatch(ui_msg_t *msg);
 
+void ui_controller_scroll_text();
+
 #endif /* __UI_CONTROLLER_H__*/

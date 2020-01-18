@@ -32,6 +32,66 @@ typedef struct ui_current_track
 
 ui_current_track_t current_track;
 
+/** Scrolling Text **/
+
+// Represents a single line of text that scrolls
+// if it's longer than the display.
+typedef struct ui_scrolling_text
+{
+    uint8_t *font;     // font used to draw text
+    const char *str;   // text to draw
+    u8g2_uint_t y;     // bottom of the text line in pixels
+    uint16_t strWidth; // Calculated width of string in pixels
+    uint16_t x;        // current x pos of start of text line
+} ui_scrolling_text_t;
+
+// Just one line for testing
+
+ui_scrolling_text_t scrollLine;
+
+// TODO: will probably need to add delay at start and end of scroll
+
+void ui_controller_scroll_line(ui_scrolling_text_t line)
+{
+    const uint8_t *origFont = u8g2.font;
+//    u8g2_SetFont(&u8g2, line.font);
+
+    // Move left or reset x to 0?
+    if (line.strWidth - line.x == u8g2_GetDisplayWidth(&u8g2))
+    {
+        line.x = 0;
+    }
+    else
+    {
+        line.x++;
+    }
+
+    u8g2_DrawStr(&u8g2, -line.x, line.y, line.str);
+ //   u8g2_SetFont(&u8g2, origFont);
+}
+
+// Scrolls any scrolling text (just one line for testing)
+void ui_controller_scroll_text()
+{
+    ui_controller_scroll_line(scrollLine);
+    u8g2_SendBuffer(&u8g2);
+}
+
+//
+void drawScrollingText(u8g2_uint_t y, const char *str)
+{
+    scrollLine.font = (uint8_t *)u8g2.font;
+    scrollLine.str = str;
+    scrollLine.y = y;
+    scrollLine.strWidth = u8g2_GetStrWidth(&u8g2, str);
+    scrollLine.x = 0;
+}
+
+void stopScrollingText()
+{
+    scrollLine.str = NULL;
+}
+
 /** Drawing helpers **/
 
 void drawStrCentered(u8g2_uint_t y, const char *str)
@@ -71,7 +131,8 @@ void ui_show_stackup(esp_ui_param_t *param)
 
     drawStrCentered(u8g2_GetMaxCharHeight(&u8g2), "Discoverable");
     drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "as");
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, (const char *)param->text_rsp.evt_text);
+    drawScrollingText(u8g2_GetMaxCharHeight(&u8g2) * 3, (const char *)param->text_rsp.evt_text);
+    //drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, (const char *)param->text_rsp.evt_text);
 
     u8g2_SendBuffer(&u8g2);
 }
@@ -218,7 +279,6 @@ void ui_controller_init()
 
     ui_show_startup();
 }
-
 
 void task_test_SSD1306i2c(void *ignore)
 {

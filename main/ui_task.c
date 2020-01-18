@@ -12,7 +12,6 @@
 #include "ui_task.h"
 #include "ui_controller.h"
 
-
 // Update display in response to message
 static bool ui_send_msg(ui_msg_t *msg);
 static void ui_work_dispatched(ui_msg_t *msg);
@@ -46,6 +45,16 @@ static void ui_task_handler(void *arg)
     }
 }
 
+// Draw the screen every 50ms
+static void ui_draw_handler(void *arg)
+{
+    for (;;)
+    {
+        ui_controller_scroll_text();
+        vTaskDelay(50 / portTICK_PERIOD_MS);
+    }
+}
+
 static void ui_work_dispatched(ui_msg_t *msg)
 {
     ui_controller_dispatch(msg);
@@ -54,22 +63,24 @@ static void ui_work_dispatched(ui_msg_t *msg)
 void ui_task_start_up(void)
 {
     s_ui_task_queue = xQueueCreate(10, sizeof(ui_msg_t));
-    xTaskCreate(ui_task_handler, "UI_T", 2048, NULL, configMAX_PRIORITIES - 5, &s_ui_task_handle);
+    xTaskCreate(ui_task_handler, "UI_Model_Update", 2048, NULL, configMAX_PRIORITIES - 5, &s_ui_task_handle);
+    xTaskCreate(ui_draw_handler, "UI_Draw_Screen", 2048, NULL, configMAX_PRIORITIES - 5, NULL);
     ui_controller_init();
 }
 
 void ui_task_shut_down(void)
 {
-    if (s_ui_task_handle) {
+    if (s_ui_task_handle)
+    {
         vTaskDelete(s_ui_task_handle);
         s_ui_task_handle = NULL;
     }
-    if (s_ui_task_queue) {
+    if (s_ui_task_queue)
+    {
         vQueueDelete(s_ui_task_queue);
         s_ui_task_queue = NULL;
     }
 }
-
 
 bool ui_work_dispatch(ui_evt_t event, void *p_params, int param_len, ui_copy_cb_t p_copy_cback)
 {
@@ -120,13 +131,13 @@ static bool ui_send_msg(ui_msg_t *msg)
 
 void ui_copyStrToTextParam(esp_ui_param_t *params, const uint8_t *str)
 {
-    ESP_LOGI(UI_TASK_TAG, "StrParam: %s", (char*)str);
+    ESP_LOGI(UI_TASK_TAG, "StrParam: %s", (char *)str);
 
     params->text_rsp.evt_text_length = strlen((char *)str);
     params->text_rsp.evt_text = (uint8_t *)malloc(params->text_rsp.evt_text_length + 1);
     memcpy(params->text_rsp.evt_text, str, params->text_rsp.evt_text_length);
     params->text_rsp.evt_text[params->text_rsp.evt_text_length] = 0;
 
-    ESP_LOGI(UI_TASK_TAG, "UI Param: len %d, txt: %s", params->text_rsp.evt_text_length, 
-        params->text_rsp.evt_text);
+    ESP_LOGI(UI_TASK_TAG, "UI Param: len %d, txt: %s", params->text_rsp.evt_text_length,
+             params->text_rsp.evt_text);
 }
