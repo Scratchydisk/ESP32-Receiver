@@ -129,10 +129,13 @@ void ui_show_stackup(esp_ui_param_t *param)
 
     u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
 
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2), "Discoverable");
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "as");
-    drawScrollingText(u8g2_GetMaxCharHeight(&u8g2) * 3, (const char *)param->text_rsp.evt_text);
-    //drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, (const char *)param->text_rsp.evt_text);
+    uint16_t lineHeight = u8g2_GetMaxCharHeight(&u8g2);
+    drawStrCentered(lineHeight, "Discoverable");
+    drawStrCentered(lineHeight * 2, "as");
+
+    u8g2_SetFont(&u8g2, u8g2_font_profont12_tr);
+
+    drawStrCentered(lineHeight * 3, (const char *)param->text_rsp.evt_text);
 
     u8g2_SendBuffer(&u8g2);
 }
@@ -148,6 +151,14 @@ void ui_show_connected(esp_ui_param_t *param)
     //  drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, (char *)param->text_rsp.evt_text);
 
     u8g2_SendBuffer(&u8g2);
+}
+
+// Draws a narrow progress bar at bottom of display, 4 pixels high
+void ui_show_progress_bar(uint8_t percent)
+{
+    u8g2_uint_t dw = u8g2_GetDisplayWidth(&u8g2);
+    u8g2_uint_t barWidth = (dw * percent) / 100;
+    u8g2_DrawBox(&u8g2, 0, u8g2_GetDisplayHeight(&u8g2) - 4, barWidth, 4);
 }
 
 void ui_show_track()
@@ -166,13 +177,21 @@ void ui_show_track()
         drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, current_track.title);
         drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, current_track.album);
 
-        char percentStr[5] = "--";
+        // Avoid divide by zero (no guarantee playing time is set)
         if (current_track.playingTime > 100)
         {
             // Times in ms, don't need this resolution, rather than mul numerator by 100, divide denominator by 100
-            sprintf(percentStr, "%d%%", current_track.currentPosition / (current_track.playingTime / 100));
+            uint8_t progress = current_track.currentPosition / (current_track.playingTime / 100);
+            ui_show_progress_bar(progress);
         }
-        drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 4, percentStr);
+
+        // char percentStr[5] = "--";
+        // if (current_track.playingTime > 100)
+        // {
+        //     // Times in ms, don't need this resolution, rather than mul numerator by 100, divide denominator by 100
+        //     sprintf(percentStr, "%d%%", current_track.currentPosition / (current_track.playingTime / 100));
+        // }
+        // drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 4, percentStr);
         // new fn to draw progress
     }
     u8g2_SendBuffer(&u8g2);
