@@ -19,6 +19,28 @@ static void ui_work_dispatched(ui_msg_t *msg);
 static xQueueHandle s_ui_task_queue = NULL;
 static xTaskHandle s_ui_task_handle = NULL;
 
+/***************************************************************
+ * Screen drawing tasks
+ * 
+ * These call the ui controller as necessary.
+ * *************************************************************/
+
+// Draw the screen every 50ms
+static void ui_draw_handler(void *arg)
+{
+    for (;;)
+    {
+        ui_controller_refresh();
+        vTaskDelay(50 / portTICK_PERIOD_MS);
+    }
+}
+
+/***************************************************************
+ * Dispatcher functions for UI update events.
+ * 
+ * These update the model, drawing to the display is handled
+ * in the Drawing task.
+ * *************************************************************/
 static void ui_task_handler(void *arg)
 {
     ui_msg_t msg;
@@ -45,16 +67,6 @@ static void ui_task_handler(void *arg)
     }
 }
 
-// Draw the screen every 50ms
-static void ui_draw_handler(void *arg)
-{
-    for (;;)
-    {
-        ui_controller_scroll_text();
-        vTaskDelay(50 / portTICK_PERIOD_MS);
-    }
-}
-
 static void ui_work_dispatched(ui_msg_t *msg)
 {
     ui_controller_dispatch(msg);
@@ -62,10 +74,11 @@ static void ui_work_dispatched(ui_msg_t *msg)
 
 void ui_task_start_up(void)
 {
+    ui_controller_init();
+
     s_ui_task_queue = xQueueCreate(10, sizeof(ui_msg_t));
     xTaskCreate(ui_task_handler, "UI_Model_Update", 2048, NULL, configMAX_PRIORITIES - 5, &s_ui_task_handle);
     xTaskCreate(ui_draw_handler, "UI_Draw_Screen", 2048, NULL, configMAX_PRIORITIES - 5, NULL);
-    ui_controller_init();
 }
 
 void ui_task_shut_down(void)
@@ -141,3 +154,6 @@ void ui_copyStrToTextParam(esp_ui_param_t *params, const uint8_t *str)
     ESP_LOGI(UI_TASK_TAG, "UI Param: len %d, txt: %s", params->text_rsp.evt_text_length,
              params->text_rsp.evt_text);
 }
+
+
+

@@ -143,15 +143,16 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
 
         esp_ui_param_t params;
         ui_copyStrToTextParam(&params, (const uint8_t *)s_a2d_conn_state_str[a2d->conn_stat.state]);
-        ui_work_dispatch(UI_EVT_CONNECTED, &params, sizeof(esp_ui_param_t), NULL);
 
         if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_DISCONNECTED)
         {
+            ui_work_dispatch(UI_EVT_DISCONNECTED, &params, sizeof(esp_ui_param_t), NULL);
             esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
             bt_i2s_task_shut_down();
         }
         else if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_CONNECTED)
         {
+            ui_work_dispatch(UI_EVT_CONNECTED, &params, sizeof(esp_ui_param_t), NULL);
             esp_bt_gap_set_scan_mode(ESP_BT_NON_CONNECTABLE, ESP_BT_NON_DISCOVERABLE);
             bt_i2s_task_start_up();
 
@@ -165,9 +166,16 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         a2d = (esp_a2d_cb_param_t *)(p_param);
         ESP_LOGI(BT_AV_TAG, "A2DP audio state: %s", s_a2d_audio_state_str[a2d->audio_stat.state]);
         s_audio_state = a2d->audio_stat.state;
+        esp_ui_param_t params;
         if (ESP_A2D_AUDIO_STATE_STARTED == a2d->audio_stat.state)
         {
+            ui_work_dispatch(UI_EVENT_TRACK_STARTED, &params, sizeof(esp_ui_param_t), NULL);
             s_pkt_cnt = 0;
+        }
+        else
+        {
+            // Treat suspended and stopped as stopped for now
+            ui_work_dispatch(UI_EVENT_TRACK_STOPPED, &params, sizeof(esp_ui_param_t), NULL);
         }
         break;
     }

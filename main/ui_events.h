@@ -10,6 +10,8 @@ typedef enum
     UI_EVT_PAIRED,    // Device has paired to the receiver - contains request check value
     UI_EVT_CONNECTED, //
     UI_EVT_DISCONNECTED,
+    UI_EVENT_TRACK_STARTED,
+    UI_EVENT_TRACK_STOPPED,
     UI_EVT_PLAY_POS_CHANGED,
     UI_EVT_TRK_TITLE,   // Received track title
     UI_EVT_TRK_ARTIST,  // Received track's artist

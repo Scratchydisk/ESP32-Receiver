@@ -10,8 +10,10 @@
 
 void ui_controller_init();
 
+// Updates the model in response to events
 void ui_controller_dispatch(ui_msg_t *msg);
 
-void ui_controller_scroll_text();
+// Writes the model to the display
+void ui_controller_refresh();
 
 #endif /* __UI_CONTROLLER_H__*/

@@ -10,27 +10,47 @@
 
 u8g2_t u8g2; // a structure which will contain all the data for one display
 
+// mutex around the state structure
+static portMUX_TYPE state_mutex = portMUX_INITIALIZER_UNLOCKED;
+
+/*********
+ * Model for screen data
+ * *******/
+
 #define MAX_LEN_TRACK_ATTRIBUTE 80
 
 typedef enum
 {
+    RCVR_STATE_INITIALISING,
+    RCVR_STATE_DISCOVERABLE,
+    RCVR_STATE_PAIRED,
+    RCVR_STATE_CONNECTED,
     RCVR_STATE_DISCONNECTED,
-    RCVR_STATE_SUSPENDED,
-    RCVR_STATE_RUNNING
+    RCVR_STATE_STOPPED,
+    RCVR_STATE_PLAYING
 } ui_rcvr_state_t;
 
-ui_rcvr_state_t rcvr_state;
+volatile ui_rcvr_state_t rcvr_state = RCVR_STATE_INITIALISING;
 
-typedef struct ui_current_track
+typedef struct ui_current_state
 {
+    char connectedTo[MAX_LEN_TRACK_ATTRIBUTE];
+    char hostName[MAX_LEN_TRACK_ATTRIBUTE];
+    char pairedWith[MAX_LEN_TRACK_ATTRIBUTE];
     char title[MAX_LEN_TRACK_ATTRIBUTE];
     char artist[MAX_LEN_TRACK_ATTRIBUTE];
     char album[MAX_LEN_TRACK_ATTRIBUTE];
-    uint32_t playingTime;
-    uint32_t currentPosition;
-} ui_current_track_t;
+    uint32_t trackDuration;
+    uint32_t trackPosition;
+} ui_current_state_t;
 
-ui_current_track_t current_track;
+ui_current_state_t current_state;
+
+void ui_controller_refresh();
+
+/*********************
+ * Screen drawing functions
+ * *******************/
 
 /** Scrolling Text **/
 
@@ -53,8 +73,8 @@ ui_scrolling_text_t scrollLine;
 
 void ui_controller_scroll_line(ui_scrolling_text_t line)
 {
-    const uint8_t *origFont = u8g2.font;
-//    u8g2_SetFont(&u8g2, line.font);
+    //const uint8_t *origFont = u8g2.font;
+    //    u8g2_SetFont(&u8g2, line.font);
 
     // Move left or reset x to 0?
     if (line.strWidth - line.x == u8g2_GetDisplayWidth(&u8g2))
@@ -67,14 +87,16 @@ void ui_controller_scroll_line(ui_scrolling_text_t line)
     }
 
     u8g2_DrawStr(&u8g2, -line.x, line.y, line.str);
- //   u8g2_SetFont(&u8g2, origFont);
+    //   u8g2_SetFont(&u8g2, origFont);
 }
 
 // Scrolls any scrolling text (just one line for testing)
 void ui_controller_scroll_text()
 {
-    ui_controller_scroll_line(scrollLine);
-    u8g2_SendBuffer(&u8g2);
+    if (strlen(scrollLine.str) > 0)
+    {
+        ui_controller_scroll_line(scrollLine);
+    }
 }
 
 //
@@ -101,12 +123,18 @@ void drawStrCentered(u8g2_uint_t y, const char *str)
     u8g2_DrawStr(&u8g2, x, y, str);
 }
 
+// Draws a narrow progress bar at bottom of display, 4 pixels high
+void ui_show_progress_bar(uint8_t percent)
+{
+    u8g2_uint_t dw = u8g2_GetDisplayWidth(&u8g2);
+    u8g2_uint_t barWidth = (dw * percent) / 100;
+    u8g2_DrawBox(&u8g2, 0, u8g2_GetDisplayHeight(&u8g2) - 4, barWidth, 4);
+}
+
 /** Controller functions **/
 
-void ui_show_startup()
+void ui_show_about()
 {
-    u8g2_ClearBuffer(&u8g2);
-
     //u8g2_SetFont(&u8g2, u8g2_font_ncenB14_tr);
     u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
 
@@ -119,80 +147,110 @@ void ui_show_startup()
     sprintf(appVer, "SW %s", appDesc.version);
 
     drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 4, appVer);
-
-    u8g2_SendBuffer(&u8g2);
 }
 
-void ui_show_stackup(esp_ui_param_t *param)
+void ui_show_discoverable()
 {
-    u8g2_ClearBuffer(&u8g2);
-
     u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
 
     drawStrCentered(u8g2_GetMaxCharHeight(&u8g2), "Discoverable");
     drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "as");
-    drawScrollingText(u8g2_GetMaxCharHeight(&u8g2) * 3, (const char *)param->text_rsp.evt_text);
-    //drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, (const char *)param->text_rsp.evt_text);
-
-    u8g2_SendBuffer(&u8g2);
+    //drawScrollingText(u8g2_GetMaxCharHeight(&u8g2) * 3, current_state.hostName);
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, current_state.hostName);
 }
 
-void ui_show_connected(esp_ui_param_t *param)
+void ui_show_connected()
 {
-    u8g2_ClearBuffer(&u8g2);
-
     u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
 
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, (char *)param->text_rsp.evt_text);
-    //  drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "to");
-    //  drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, (char *)param->text_rsp.evt_text);
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2), "Connected to");
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, current_state.connectedTo);
+}
 
-    u8g2_SendBuffer(&u8g2);
+void ui_show_disconnected()
+{
+    u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
+
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2), "Disconnected");
+
+    // Actually this should show the time
 }
 
 void ui_show_track()
 {
-    u8g2_ClearBuffer(&u8g2);
-
     u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
 
-    if (strcmp(current_track.title, "") == 0)
+    if (strcmp(current_state.title, "") == 0)
     {
         drawStrCentered(u8g2_GetMaxCharHeight(&u8g2), "Playing...");
     }
     else
     {
-        drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 1, current_track.artist);
-        drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, current_track.title);
-        drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, current_track.album);
+        drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 1, current_state.artist);
+        drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, current_state.title);
+        drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, current_state.album);
 
-        char percentStr[5] = "--";
-        if (current_track.playingTime > 100)
+        // Avoid divide by zero (no guarantee duration is set)
+        if (current_state.trackDuration > 100)
         {
             // Times in ms, don't need this resolution, rather than mul numerator by 100, divide denominator by 100
-            sprintf(percentStr, "%d%%", current_track.currentPosition / (current_track.playingTime / 100));
+            uint8_t progress = current_state.trackPosition / (current_state.trackDuration / 100);
+            ui_show_progress_bar(progress);
         }
-        drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 4, percentStr);
-        // new fn to draw progress
     }
-    u8g2_SendBuffer(&u8g2);
 }
 
-void ui_showPaired(esp_ui_param_t *param)
+void ui_show_paired()
 {
-    u8g2_ClearBuffer(&u8g2);
-
     //u8g2_SetFont(&u8g2, u8g2_font_ncenB14_tr);
     u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
 
     drawStrCentered(u8g2_GetMaxCharHeight(&u8g2), "Paired");
     drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "with");
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, (char *)param->text_rsp.evt_text);
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, current_state.pairedWith);
+}
+
+// Draws screen, driven by current state
+void ui_controller_refresh()
+{
+    u8g2_ClearBuffer(&u8g2);
+
+    // Lock the state model
+    portENTER_CRITICAL(&state_mutex);
+
+    switch (rcvr_state)
+    {
+    case RCVR_STATE_CONNECTED:
+        ui_show_connected();
+        break;
+    case RCVR_STATE_DISCONNECTED:
+        ui_show_disconnected();
+        break;
+    case RCVR_STATE_PAIRED:
+        ui_show_paired();
+        break;
+    case RCVR_STATE_PLAYING:
+        ui_show_track();
+        break;
+    case RCVR_STATE_DISCOVERABLE:
+        ui_show_discoverable();
+        break;
+    case RCVR_STATE_INITIALISING:
+        ui_show_about();
+        break;
+    case RCVR_STATE_STOPPED:
+        ui_show_connected();
+        break;
+    }
+
+   // ui_controller_scroll_text();
+
+    portEXIT_CRITICAL(&state_mutex);
 
     u8g2_SendBuffer(&u8g2);
 }
 
-/**
+/************************************
  * Decide what to do based upon the UI event passed.
  */
 void ui_controller_dispatch(ui_msg_t *msg)
@@ -202,52 +260,61 @@ void ui_controller_dispatch(ui_msg_t *msg)
     ESP_LOGI(UI_CONTROLLER_TAG, "Dispatch");
     esp_ui_param_t *param = (esp_ui_param_t *)(msg->param);
 
+    // Lock the state model
+    portENTER_CRITICAL(&state_mutex);
+
     switch (msg->event)
     {
     case UI_EVT_STACK_UP:
-        ui_show_stackup(param);
+        rcvr_state = RCVR_STATE_DISCOVERABLE;
+        strncpy(current_state.hostName, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+        current_state.hostName[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
         break;
     case UI_EVT_CONNECTED:
-        ui_show_connected(param);
+        rcvr_state = RCVR_STATE_CONNECTED;
+        strncpy(current_state.connectedTo, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+        current_state.connectedTo[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
         break;
     case UI_EVT_DISCONNECTED:
-        ui_show_connected(param);
+        rcvr_state = RCVR_STATE_DISCONNECTED;
+        current_state.connectedTo[0] = '\0';
         break;
     case UI_EVT_PAIRED:
-        ui_showPaired(param);
+        rcvr_state = RCVR_STATE_PAIRED;
+        strncpy(current_state.pairedWith, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+        current_state.pairedWith[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
+        break;
+    case UI_EVENT_TRACK_STARTED:
+        rcvr_state = RCVR_STATE_PLAYING;
+        break;
+    case UI_EVENT_TRACK_STOPPED:
+        rcvr_state = RCVR_STATE_STOPPED;
         break;
     case UI_EVT_PLAY_POS_CHANGED:
-        current_track.currentPosition = param->int_rsp.evt_value;
-        ui_show_track();
+        current_state.trackPosition = param->int_rsp.evt_value;
         break;
     case UI_EVT_TRK_ALBUM:
         // Some album names have extraneous '/'s as their first char, remove this
-        // copyOffset = (char)param->text_rsp.evt_text[0] == '/' ? 1 : 0;
-        //strncpy(current_track.album, (char *)(param->text_rsp.evt_text + copyOffset), MAX_LEN_TRACK_ATTRIBUTE);
-        strncpy(current_track.album, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
-        current_track.album[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
-        ui_show_track();
+        strncpy(current_state.album, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+        current_state.album[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
         break;
     case UI_EVT_TRK_ARTIST:
-        strncpy(current_track.artist, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
-        current_track.artist[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
-        ui_show_track();
+        strncpy(current_state.artist, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+        current_state.artist[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
         break;
     case UI_EVT_TRK_PLAYINGTIME:
-        current_track.playingTime = param->int_rsp.evt_value;
-        ESP_LOGI(UI_CONTROLLER_TAG, "Playing time (param): %d", param->int_rsp.evt_value);
-        ESP_LOGI(UI_CONTROLLER_TAG, "Playing time: %d", current_track.playingTime);
-        ui_show_track();
+        current_state.trackDuration = param->int_rsp.evt_value;
         break;
     case UI_EVT_TRK_TITLE:
-        strncpy(current_track.title, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
-        current_track.title[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
-        ui_show_track();
+        strncpy(current_state.title, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+        current_state.title[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
         break;
     default:
-        ui_show_startup();
+        ui_show_about();
         break;
     }
+
+    portEXIT_CRITICAL(&state_mutex);
 }
 
 /**
@@ -276,8 +343,6 @@ void ui_controller_init()
     u8g2_SetPowerSave(&u8g2, 0); // wake up display
     // Initialise half brightness
     u8g2_SetContrast(&u8g2, 127);
-
-    ui_show_startup();
 }
 
 void task_test_SSD1306i2c(void *ignore)
