@@ -176,14 +176,6 @@ void ui_show_disconnected()
     // Actually this should show the time
 }
 
-// Draws a narrow progress bar at bottom of display, 4 pixels high
-void ui_show_progress_bar(uint8_t percent)
-{
-    u8g2_uint_t dw = u8g2_GetDisplayWidth(&u8g2);
-    u8g2_uint_t barWidth = (dw * percent) / 100;
-    u8g2_DrawBox(&u8g2, 0, u8g2_GetDisplayHeight(&u8g2) - 4, barWidth, 4);
-}
-
 void ui_show_track()
 {
     u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
