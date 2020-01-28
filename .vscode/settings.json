@@ -1,7 +1,7 @@
 {
-    "C_Cpp.default.systemIncludePath": [
-        "/home/stewart/esp-idf/components/",
-        
-    ],
+    "files.associations": {
+        "freertos.h": "c"
+    }
+   
    
 }

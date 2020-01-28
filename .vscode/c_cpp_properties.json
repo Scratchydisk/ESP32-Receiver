@@ -4,14 +4,18 @@
             "name": "Linux",
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
-            "cStandard": "c89",
+            "cStandard": "c11",
             "cppStandard": "c++17",
             "intelliSenseMode": "gcc-x64",
-            "configurationProvider": "ms-vscode.cmake-tools ",
+            "configurationProvider": "ms-vscode.cmake-tools",
             "includePath": [
-                "/home/stewart/esp-idf/**",
+                "$(config:idf.espIdfPath}/components/**",
                 "${workspaceFolder}/components/u8g2/csrc"
-            ]
+            ],
+            "browse": {
+                "path": ["${config:idf.espIdfPath}/components"],
+                "limitSymbolsToIncludedHeaders": true
+            }
         }
     ],
     "version": 4
