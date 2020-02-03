@@ -334,11 +334,10 @@ void ui_controller_init()
     u8g2_Setup_ssd1306_i2c_128x64_noname_f(
         &u8g2,
         U8G2_R0,
-        //u8x8_byte_sw_i2c,
         u8g2_esp32_i2c_byte_cb,
         u8g2_esp32_gpio_and_delay_cb); // init u8g2 structure
 
-    u8x8_SetI2CAddress(&u8g2.u8x8, 0x78);
+    u8x8_SetI2CAddress(&u8g2.u8x8, CONFIG_DISPLAY_I2C_ADDRESS);
     u8g2_InitDisplay(&u8g2);     // send init sequence to the display, display is in sleep mode after this,
     u8g2_SetPowerSave(&u8g2, 0); // wake up display
     // Initialise half brightness

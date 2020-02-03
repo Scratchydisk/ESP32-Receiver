@@ -3,20 +3,20 @@
 
 #include <stdint.h>
 
-
 typedef enum
 {
-    UI_EVT_STACK_UP,
-    UI_EVT_PAIRED,    // Device has paired to the receiver - contains request check value
-    UI_EVT_CONNECTED, //
-    UI_EVT_DISCONNECTED,
-    UI_EVENT_TRACK_STARTED,
-    UI_EVENT_TRACK_STOPPED,
-    UI_EVT_PLAY_POS_CHANGED,
-    UI_EVT_TRK_TITLE,   // Received track title
-    UI_EVT_TRK_ARTIST,  // Received track's artist
-    UI_EVT_TRK_ALBUM,  // Received track's album
-    UI_EVT_TRK_PLAYINGTIME  // Received track playing time
+    UI_EVT_STACK_UP,         // System initialised to NonDiscoverable state
+    UI_EVT_DISCOVERABLE,     // User has pressed discoverable button
+    UI_EVT_PAIRED,           // Device has paired to the receiver - contains request check value
+    UI_EVT_CONNECTED,        // Device has connected to receiver
+    UI_EVT_DISCONNECTED,     // Device has disconnected from receiver
+    UI_EVENT_TRACK_STARTED,  // Device has started playing a track
+    UI_EVENT_TRACK_STOPPED,  // Track has stopped playing
+    UI_EVT_PLAY_POS_CHANGED, // Position within track has changed
+    UI_EVT_TRK_TITLE,        // Received track title
+    UI_EVT_TRK_ARTIST,       // Received track's artist
+    UI_EVT_TRK_ALBUM,        // Received track's album
+    UI_EVT_TRK_PLAYINGTIME   // Received track playing time
 } ui_evt_t;
 
 typedef union {
@@ -34,7 +34,7 @@ typedef union {
      */
     struct ui_int_rsp_param
     {
-        uint32_t evt_value;    /*!< Numeric value of parameter */
+        uint32_t evt_value; /*!< Numeric value of parameter */
     } int_rsp;
 } esp_ui_param_t;
 

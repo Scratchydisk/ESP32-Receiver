@@ -41,7 +41,7 @@ static void ui_draw_handler(void *arg)
  * These update the model, drawing to the display is handled
  * in the Drawing task.
  * *************************************************************/
-static void ui_task_handler(void *arg)
+static void ui_model_update_handler(void *arg)
 {
     ui_msg_t msg;
     for (;;)
@@ -62,6 +62,7 @@ static void ui_task_handler(void *arg)
             if (msg.param)
             {
                 free(msg.param);
+                msg.param = NULL;
             }
         }
     }
@@ -72,12 +73,16 @@ static void ui_work_dispatched(ui_msg_t *msg)
     ui_controller_dispatch(msg);
 }
 
+/*
+ Creates tasks to handle updating the UI model based upon
+ system state changes and to draw the screen.
+*/
 void ui_task_start_up(void)
 {
     ui_controller_init();
 
     s_ui_task_queue = xQueueCreate(10, sizeof(ui_msg_t));
-    xTaskCreate(ui_task_handler, "UI_Model_Update", 2048, NULL, configMAX_PRIORITIES - 5, &s_ui_task_handle);
+    xTaskCreate(ui_model_update_handler, "UI_Model_Update", 2048, NULL, configMAX_PRIORITIES - 5, &s_ui_task_handle);
     xTaskCreate(ui_draw_handler, "UI_Draw_Screen", 2048, NULL, configMAX_PRIORITIES - 5, NULL);
 }
 

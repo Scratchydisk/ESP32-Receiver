@@ -4,7 +4,7 @@ menu "BT Receiver Configuration"
         prompt "A2DP Sink Output"
         default A2DP_SINK_OUTPUT_EXTERNAL_I2S
         help
-            Select to use Internal DAC or external I2S driver
+            Select to use Internal DAC or external I2S/PCM driver
 
         config A2DP_SINK_OUTPUT_INTERNAL_DAC
             bool "Internal DAC"
@@ -16,7 +16,25 @@ menu "BT Receiver Configuration"
             help
                 Select this to use External I2S sink output
 
+        config A2DP_SINK_OUTPUT_EXTERNAL_PCM
+            bool "External PCM Codec"
+            help
+                Select this to use External PCM sink output
     endchoice
+
+    config DISCOVERY_MODE_ENABLE_PIN
+        int "Discovery Mode Enable Pin"
+        default 23
+        help 
+            Pulling this pin low will put the device into Bluetooth 
+            discovery mode.
+
+    config DISCOVERY_MODE_DURATION
+        int "Discovery Mode Duration (seconds)"
+        default 60
+        help 
+            Length of time the device remains in discovery mode after
+            the user enables it.
 
     config DISPLAY_I2C_SCL_PIN
         int "Display SCL"
@@ -29,6 +47,12 @@ menu "BT Receiver Configuration"
         default 21
         help
             I2C SDA GPIO number for OLED display.
+
+    config DISPLAY_I2C_ADDRESS
+        hex "Display's I2C Address"
+        default 0x78
+        help
+            Hex vaule of display's I2C address
 
     config I2S_LRCK_PIN
         int "I2S LRCK (WS) GPIO"
