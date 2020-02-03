@@ -9,7 +9,7 @@
             "intelliSenseMode": "gcc-x64",
             "configurationProvider": "ms-vscode.cmake-tools",
             "includePath": [
-                "$(config:idf.espIdfPath}/components/**",
+                "${config:idf.espIdfPath}/components/**",
                 "${workspaceFolder}/components/u8g2/csrc"
             ],
             "browse": {

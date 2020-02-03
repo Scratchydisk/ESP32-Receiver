@@ -1,4 +1,4 @@
-menu "BT Speaker Configuration"
+menu "BT Receiver Configuration"
 
     choice A2DP_SINK_OUTPUT
         prompt "A2DP Sink Output"
