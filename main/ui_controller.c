@@ -171,9 +171,16 @@ void ui_show_disconnected()
 {
     u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
 
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2), "Disconnected");
+    //drawStrCentered(u8g2_GetMaxCharHeight(&u8g2), "Disconnected");
 
     // Actually this should show the time
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 1, "27/08/1936");
+
+    // 16 pixel high font
+    //u8g2_SetFont(&u8g2, u8g2_font_logisoso16_tn);  // Good
+    //u8g2_SetFont(&u8g2, u8g2_font_inr27_mn);  // Pretty decent
+    u8g2_SetFont(&u8g2, u8g2_font_osr29_tn); // Better than 26
+    drawStrCentered(u8g2_GetDisplayHeight(&u8g2), "24:36");
 }
 
 void ui_show_track()
@@ -243,7 +250,7 @@ void ui_controller_refresh()
         break;
     }
 
-   // ui_controller_scroll_text();
+    // ui_controller_scroll_text();
 
     portEXIT_CRITICAL(&state_mutex);
 
@@ -265,10 +272,13 @@ void ui_controller_dispatch(ui_msg_t *msg)
 
     switch (msg->event)
     {
-    case UI_EVT_STACK_UP:
-        rcvr_state = RCVR_STATE_DISCOVERABLE;
+    case UI_EVT_NON_DISCOVERABLE:
+        rcvr_state = RCVR_STATE_DISCONNECTED;
         strncpy(current_state.hostName, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
         current_state.hostName[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
+        break;
+    case UI_EVT_DISCOVERABLE:
+        rcvr_state = RCVR_STATE_DISCOVERABLE;
         break;
     case UI_EVT_CONNECTED:
         rcvr_state = RCVR_STATE_CONNECTED;
@@ -284,13 +294,13 @@ void ui_controller_dispatch(ui_msg_t *msg)
         strncpy(current_state.pairedWith, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
         current_state.pairedWith[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
         break;
-    case UI_EVENT_TRACK_STARTED:
+    case UI_EVT_TRK_STARTED:
         rcvr_state = RCVR_STATE_PLAYING;
         break;
-    case UI_EVENT_TRACK_STOPPED:
+    case UI_EVT_TRK_STOPPED:
         rcvr_state = RCVR_STATE_STOPPED;
         break;
-    case UI_EVT_PLAY_POS_CHANGED:
+    case UI_EVT_TRK_POS_CHANGED:
         current_state.trackPosition = param->int_rsp.evt_value;
         break;
     case UI_EVT_TRK_ALBUM:
@@ -342,24 +352,4 @@ void ui_controller_init()
     u8g2_SetPowerSave(&u8g2, 0); // wake up display
     // Initialise half brightness
     u8g2_SetContrast(&u8g2, 127);
-}
-
-void task_test_SSD1306i2c(void *ignore)
-{
-    /*
-    ESP_LOGI(TAG, "u8g2_DrawBox");
-    u8g2_DrawBox(&u8g2, 0, 26, 80, 6);
-    u8g2_DrawFrame(&u8g2, 0, 26, 100, 6);
-
-    ESP_LOGI(TAG, "u8g2_SetFont");
-    u8g2_SetFont(&u8g2, u8g2_font_ncenB14_tr);
-    ESP_LOGI(TAG, "u8g2_DrawStr");
-    u8g2_DrawStr(&u8g2, 2, 17, "Hi myself!");
-    ESP_LOGI(TAG, "u8g2_SendBuffer");
-    u8g2_SendBuffer(&u8g2);
-    u8g2_SetContrast(&u8g2, 28);
-
-    ESP_LOGI(TAG, "All done!");
-*/
-    //    vTaskDelete(NULL);
 }

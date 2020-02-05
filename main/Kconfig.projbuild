@@ -36,6 +36,13 @@ menu "BT Receiver Configuration"
             Length of time the device remains in discovery mode after
             the user enables it.
 
+    config DEVICE_NAME
+        string "Bluetooth Device Name"
+        default "Grotsoft_Receiver"
+        help 
+            Discoverable device name for this Bluetooth
+            receiver.
+
     config DISPLAY_I2C_SCL_GPIO
         int "Display SCL GPIO"
         default 23

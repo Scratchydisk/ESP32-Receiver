@@ -1,7 +1,19 @@
 @startuml BT Receiver
 
+hide empty description
 
-[*] --> NonDiscoverable : Initialise()
+title
+BlueTooth Receiver State Diagram
+end title
+
+legend left
+This diagram shows the state model for an ESP-32 based BlueTooth audio receiver.
+
+**Events**
+Events prefixed UI_EVT_x are UI events handled by the ui_controller
+end legend
+
+[*] --> NonDiscoverable : UI_EVT_NON_DISCOVERABLE
 
 state NonDiscoverable {
 
@@ -11,27 +23,30 @@ state NonDiscoverable {
 
         Connectable --> Authenticating : Connection Attempt
         Authenticating -> Connectable : [Failure]
-        Authenticating -> Connected : [Success]
+        Authenticating -> Connected : [Success] \n UI_EVT_CONNECTED
 
     }
 
     state Connected {
-        [*] --> AwaitingCommand
-
+        [*] --> NotPlaying
+        NotPlaying --> Playing : UI_EVT_TRK_STARTED
+        Playing --> NotPlaying : UI_EVT_TRK_STOPPED
+        Playing --> Playing : UI_EVT_TRK_POS_CHANGED
+        Playing : OnEntry: Set playtime, title & artist
     }
 
-    Connected --> Disconnected : Disconnect()
+    Connected --> Disconnected : UI_EVT_DISCONNECTED
 }
 
-NonDiscoverable ----> Discoverable : [Discovery Button Press]
+NonDiscoverable ----> Discoverable : [Discovery Button Press] \n UI_EVT_DISCOVERABLE
 
 state Discoverable{
     [*] --> Waiting
     Waiting --> Pairing : [Pair Request]
-    Pairing --> Connected : [Paired]
+    Pairing --> Connected : [Success] \n UI_EVT_PAIRED
     Pairing --> Waiting : [Failure]
 }
 
-Discoverable -u--> NonDiscoverable : [Timeout]
+Discoverable -u--> NonDiscoverable : [Timeout] \n UI_EVT_NON_DISCOVERABLE
 
 @enduml

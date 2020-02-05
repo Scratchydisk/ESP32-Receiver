@@ -169,13 +169,13 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         esp_ui_param_t params;
         if (ESP_A2D_AUDIO_STATE_STARTED == a2d->audio_stat.state)
         {
-            ui_work_dispatch(UI_EVENT_TRACK_STARTED, &params, sizeof(esp_ui_param_t), NULL);
+            ui_work_dispatch(UI_EVT_TRK_STARTED, &params, sizeof(esp_ui_param_t), NULL);
             s_pkt_cnt = 0;
         }
         else
         {
             // Treat suspended and stopped as stopped for now
-            ui_work_dispatch(UI_EVENT_TRACK_STOPPED, &params, sizeof(esp_ui_param_t), NULL);
+            ui_work_dispatch(UI_EVT_TRK_STOPPED, &params, sizeof(esp_ui_param_t), NULL);
         }
         break;
     }
@@ -244,7 +244,7 @@ static void bt_av_play_pos_changed(uint32_t position)
 {
     esp_ui_param_t params;
     params.int_rsp.evt_value = position;
-    ui_work_dispatch(UI_EVT_PLAY_POS_CHANGED, &params, sizeof(esp_ui_param_t), NULL);
+    ui_work_dispatch(UI_EVT_TRK_POS_CHANGED, &params, sizeof(esp_ui_param_t), NULL);
 
     if (esp_avrc_rn_evt_bit_mask_operation(ESP_AVRC_BIT_MASK_OP_TEST, &s_avrc_peer_rn_cap,
                                            ESP_AVRC_RN_PLAY_POS_CHANGED))

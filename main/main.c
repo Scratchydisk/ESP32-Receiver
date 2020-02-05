@@ -52,12 +52,17 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param);
 void setupI2S();
 void setupBluetooth();
 
+// For debouncing the discovery mode button
+volatile TickType_t _lastDiscoveryClickAt;
+
 // Interrupt handler for GPIO I/O
 static void IRAM_ATTR gpio_isr_handler(void *arg)
 {
     uint32_t gpio_num = (uint32_t)arg;
-    if (gpio_num == CONFIG_DISCOVERY_MODE_ENABLE_GPIO)
+    // 100ms debounce
+    if (gpio_num == CONFIG_DISCOVERY_MODE_ENABLE_GPIO && (xTaskGetTickCount() - _lastDiscoveryClickAt) > 100 / portTICK_PERIOD_MS)
     {
+        _lastDiscoveryClickAt = xTaskGetTickCount();
         bt_app_work_dispatch(bt_av_hdl_stack_evt, BT_APP_EVT_DISCOVEARBLE_ON, NULL, 0, NULL);
     }
 }
@@ -74,7 +79,8 @@ void app_main()
     io_conf.pin_bit_mask = 1ULL << CONFIG_DISCOVERY_MODE_ENABLE_GPIO;
     //set as input / pull up mode
     io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pull_up_en = 1;
+    io_conf.pull_up_en = true;
+    io_conf.pull_down_en = false;
     gpio_config(&io_conf);
 
     /* Create UI task */
@@ -101,9 +107,9 @@ void app_main()
 
     // Hook ISR to discovery pin, Use defaults (0)
     gpio_install_isr_service(0);
-    gpio_isr_handler_add(CONFIG_DISCOVERY_MODE_ENABLE_GPIO, 
-        gpio_isr_handler, 
-        (void *)CONFIG_DISCOVERY_MODE_ENABLE_GPIO);
+    gpio_isr_handler_add(CONFIG_DISCOVERY_MODE_ENABLE_GPIO,
+                         gpio_isr_handler,
+                         (void *)CONFIG_DISCOVERY_MODE_ENABLE_GPIO);
 
     ESP_LOGI(BT_AV_TAG, "Finished app_main()");
 }
@@ -246,18 +252,18 @@ void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 
 static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
 {
-    ESP_LOGD(BT_AV_TAG, "%s evt %d", __func__, event);
+    char *dev_name = CONFIG_DEVICE_NAME;
+
+    ESP_LOGI(BT_AV_TAG, "%s evt %d", __func__, event);
     switch (event)
     {
     case BT_APP_EVT_STACK_UP:
-    {
         /* set up device name */
-        const char *dev_name = "Grotsoft_Receiver";
         esp_bt_dev_set_device_name(dev_name);
 
         esp_ui_param_t params;
         ui_copyStrToTextParam(&params, (const uint8_t *)dev_name);
-        ui_work_dispatch(UI_EVT_STACK_UP, &params, sizeof(esp_ui_param_t), NULL);
+        ui_work_dispatch(UI_EVT_NON_DISCOVERABLE, &params, sizeof(esp_ui_param_t), NULL);
 
         esp_bt_gap_register_callback(bt_app_gap_cb);
 
@@ -281,7 +287,19 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
         esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_NON_DISCOVERABLE);
         ESP_LOGI(BT_AV_TAG, "End stack up");
         break;
-    }
+    case BT_APP_EVT_DISCOVEARBLE_ON:
+        /* set discoverable mode, wait to be paired */
+        esp_bt_gap_set_scan_mode(ESP_BT_NON_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
+        // Send discoverable UI event (no param sent)
+        ui_work_dispatch(UI_EVT_DISCOVERABLE, NULL, 0, NULL);
+        ESP_LOGI(BT_AV_TAG, "End discoverable on");
+        break;
+    case BT_APP_EVT_DISCOVEARBLE_OFF:
+        /* set connectable mode, wait to be connected */
+        esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_NON_DISCOVERABLE);
+        ui_work_dispatch(UI_EVT_NON_DISCOVERABLE, NULL, 0, NULL);
+        ESP_LOGI(BT_AV_TAG, "End discoverable off");
+        break;
     default:
         ESP_LOGE(BT_AV_TAG, "%s unhandled evt %d", __func__, event);
         break;
