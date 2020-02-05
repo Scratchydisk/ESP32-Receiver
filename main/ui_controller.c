@@ -326,8 +326,8 @@ void ui_controller_init()
 
     // Initialise the wrapper around the U8g2 library
     u8g2_esp32_hal_t u8g2_esp32_hal = U8G2_ESP32_HAL_DEFAULT;
-    u8g2_esp32_hal.sda = CONFIG_DISPLAY_I2C_SDA_PIN;
-    u8g2_esp32_hal.scl = CONFIG_DISPLAY_I2C_SCL_PIN;
+    u8g2_esp32_hal.sda = CONFIG_DISPLAY_I2C_SDA_GPIO;
+    u8g2_esp32_hal.scl = CONFIG_DISPLAY_I2C_SCL_GPIO;
     u8g2_esp32_hal_init(u8g2_esp32_hal);
 
     // This is the 0.96" OLED display, I2C, with full frame buffer

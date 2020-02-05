@@ -1,6 +1,7 @@
 {
     "files.associations": {
-        "freertos.h": "c"
+        "freertos.h": "c",
+        "esp_intr_alloc.h": "c"
     }
    
    

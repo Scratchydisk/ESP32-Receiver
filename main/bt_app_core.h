@@ -16,6 +16,7 @@
 #define BT_APP_CORE_TAG                   "BT_APP_CORE"
 
 #define BT_APP_SIG_WORK_DISPATCH          (0x01)
+#define BT_APP_SIG_INTR_WORK_DISPATCH          (0x02)
 
 /**
  * @brief     handler for the dispatched work

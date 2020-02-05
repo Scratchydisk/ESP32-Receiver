@@ -22,9 +22,9 @@ menu "BT Receiver Configuration"
                 Select this to use External PCM sink output
     endchoice
 
-    config DISCOVERY_MODE_ENABLE_PIN
-        int "Discovery Mode Enable Pin"
-        default 23
+    config DISCOVERY_MODE_ENABLE_GPIO
+        int "Discovery Mode Enable GPIO"
+        default 17
         help 
             Pulling this pin low will put the device into Bluetooth 
             discovery mode.
@@ -36,14 +36,14 @@ menu "BT Receiver Configuration"
             Length of time the device remains in discovery mode after
             the user enables it.
 
-    config DISPLAY_I2C_SCL_PIN
-        int "Display SCL"
-        default 22
+    config DISPLAY_I2C_SCL_GPIO
+        int "Display SCL GPIO"
+        default 23
         help
             I2C SCL GPIO number for OLED display.
 
-    config DISPLAY_I2C_SDA_PIN
-        int "Display SDA"
+    config DISPLAY_I2C_SDA_GPIO
+        int "Display SDA GPIO"
         default 21
         help
             I2C SDA GPIO number for OLED display.
@@ -54,21 +54,21 @@ menu "BT Receiver Configuration"
         help
             Hex vaule of display's I2C address
 
-    config I2S_LRCK_PIN
+    config I2S_LRCK_GPIO
         int "I2S LRCK (WS) GPIO"
         default 22
         depends on A2DP_SINK_OUTPUT_EXTERNAL_I2S
         help
             GPIO number to use for I2S LRCK(WS) Driver.
 
-    config I2S_BCK_PIN
+    config I2S_BCK_GPIO
         int "I2S BCK GPIO"
         default 26
         depends on A2DP_SINK_OUTPUT_EXTERNAL_I2S
         help
             GPIO number to use for I2S BCK Driver.
 
-    config I2S_DATA_PIN
+    config I2S_DATA_GPIO
         int "I2S DATA GPIO"
         default 25
         depends on A2DP_SINK_OUTPUT_EXTERNAL_I2S

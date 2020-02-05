@@ -21,6 +21,7 @@
 
 static void bt_app_task_handler(void *arg);
 static bool bt_app_send_msg(bt_app_msg_t *msg);
+static bool bt_app_intr_send_msg(bt_app_msg_t *msg);
 static void bt_app_work_dispatched(bt_app_msg_t *msg);
 
 static xQueueHandle s_bt_app_task_queue = NULL;
@@ -28,23 +29,20 @@ static xTaskHandle s_bt_app_task_handle = NULL;
 static xTaskHandle s_bt_i2s_task_handle = NULL;
 static RingbufHandle_t s_ringbuf_i2s = NULL;
 
-
-bool bt_app_work_dispatch(bt_app_cb_t p_cback, uint16_t event, void *p_params, int param_len, bt_app_copy_cb_t p_copy_cback)
+// Dispatches events, do not call directly, use bt_app_work_interrupt_dispatch
+// or bt_app_work_dispatch
+bool do_dispatch(uint16_t msg_sig, bt_app_cb_t p_cback, uint16_t event, void *p_params, int param_len, bt_app_copy_cb_t p_copy_cback)
 {
     ESP_LOGD(BT_APP_CORE_TAG, "%s event 0x%x, param len %d", __func__, event, param_len);
 
     bt_app_msg_t msg;
     memset(&msg, 0, sizeof(bt_app_msg_t));
 
-    msg.sig = BT_APP_SIG_WORK_DISPATCH;
+    msg.sig = msg_sig;
     msg.event = event;
     msg.cb = p_cback;
 
-    if (param_len == 0)
-    {
-        return bt_app_send_msg(&msg);
-    }
-    else if (p_params && param_len > 0)
+    if (p_params && param_len > 0)
     {
         if ((msg.param = malloc(param_len)) != NULL)
         {
@@ -54,11 +52,56 @@ bool bt_app_work_dispatch(bt_app_cb_t p_cback, uint16_t event, void *p_params, i
             {
                 p_copy_cback(&msg, msg.param, p_params);
             }
+        }
+    }
+
+    if ((p_params && param_len > 0) || param_len == 0)
+    {
+        if (msg_sig == BT_APP_SIG_WORK_DISPATCH)
+        {
             return bt_app_send_msg(&msg);
+        }
+        else if (msg_sig == BT_APP_SIG_INTR_WORK_DISPATCH)
+        {
+            return bt_app_intr_send_msg(&msg);
+        }
+        else
+        {
+            ESP_LOGE(BT_APP_CORE_TAG, "%s invalid msg sig %d", __func__, msg_sig);
+            return false;
         }
     }
 
     return false;
+}
+
+// Create an app message and send to task queue.
+// Version of bt_app_work_dispatch that can
+// be called from an ISR
+bool bt_app_work_interrupt_dispatch(bt_app_cb_t p_cback, uint16_t event, void *p_params, int param_len, bt_app_copy_cb_t p_copy_cback)
+{
+    // Prepare and dispatch msg in interrupt safe manner
+    return do_dispatch(
+        BT_APP_SIG_INTR_WORK_DISPATCH,
+        p_cback,
+        event,
+        p_params,
+        param_len,
+        p_copy_cback);
+}
+
+// Create an app message and send to task queue.
+// Do not call from an ISR
+bool bt_app_work_dispatch(bt_app_cb_t p_cback, uint16_t event, void *p_params, int param_len, bt_app_copy_cb_t p_copy_cback)
+{
+    // Prepare and dispatch msg
+    return do_dispatch(
+        BT_APP_SIG_WORK_DISPATCH,
+        p_cback,
+        event,
+        p_params,
+        param_len,
+        p_copy_cback);
 }
 
 static bool bt_app_send_msg(bt_app_msg_t *msg)
@@ -69,6 +112,22 @@ static bool bt_app_send_msg(bt_app_msg_t *msg)
     }
 
     if (xQueueSend(s_bt_app_task_queue, msg, 10 / portTICK_RATE_MS) != pdTRUE)
+    {
+        ESP_LOGE(BT_APP_CORE_TAG, "%s xQueue send failed", __func__);
+        return false;
+    }
+    return true;
+}
+
+static bool bt_app_intr_send_msg(bt_app_msg_t *msg)
+{
+    if (msg == NULL)
+    {
+        return false;
+    }
+
+    // See https://www.freertos.org/a00119.html for params
+    if (xQueueSendFromISR(s_bt_app_task_queue, msg, NULL) != pdTRUE)
     {
         ESP_LOGE(BT_APP_CORE_TAG, "%s xQueue send failed", __func__);
         return false;

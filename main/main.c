@@ -24,6 +24,7 @@
 #include "nvs_flash.h"
 #include "esp_system.h"
 #include "esp_log.h"
+#include "esp_intr_alloc.h"
 
 #include "esp_bt.h"
 #include "bt_app_core.h"
@@ -34,6 +35,7 @@
 #include "esp_a2dp_api.h"
 #include "esp_avrc_api.h"
 #include "driver/i2s.h"
+#include "driver/gpio.h"
 #include "ui_task.h"
 #include "ui_controller.h"
 
@@ -41,6 +43,8 @@
 enum
 {
     BT_APP_EVT_STACK_UP = 0,
+    BT_APP_EVT_DISCOVEARBLE_ON,
+    BT_APP_EVT_DISCOVEARBLE_OFF
 };
 
 /* handler for bluetooth stack enabled events */
@@ -48,8 +52,31 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param);
 void setupI2S();
 void setupBluetooth();
 
+// Interrupt handler for GPIO I/O
+static void IRAM_ATTR gpio_isr_handler(void *arg)
+{
+    uint32_t gpio_num = (uint32_t)arg;
+    if (gpio_num == CONFIG_DISCOVERY_MODE_ENABLE_GPIO)
+    {
+        bt_app_work_dispatch(bt_av_hdl_stack_evt, BT_APP_EVT_DISCOVEARBLE_ON, NULL, 0, NULL);
+    }
+}
+
 void app_main()
 {
+    // Setup Discovery enable button as input / pull up
+    // and enable rising edge interrupt
+    // (Triggers when user releases button)
+    gpio_config_t io_conf;
+    //interrupt on rising edge
+    io_conf.intr_type = GPIO_PIN_INTR_POSEDGE;
+    //bit mask of the discovery button's GPIO pin
+    io_conf.pin_bit_mask = 1ULL << CONFIG_DISCOVERY_MODE_ENABLE_GPIO;
+    //set as input / pull up mode
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pull_up_en = 1;
+    gpio_config(&io_conf);
+
     /* Create UI task */
     ui_task_start_up();
 
@@ -71,6 +98,12 @@ void app_main()
 
     /* Bluetooth device name, connection mode and profile set up */
     bt_app_work_dispatch(bt_av_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL);
+
+    // Hook ISR to discovery pin, Use defaults (0)
+    gpio_install_isr_service(0);
+    gpio_isr_handler_add(CONFIG_DISCOVERY_MODE_ENABLE_GPIO, 
+        gpio_isr_handler, 
+        (void *)CONFIG_DISCOVERY_MODE_ENABLE_GPIO);
 
     ESP_LOGI(BT_AV_TAG, "Finished app_main()");
 }
@@ -105,9 +138,9 @@ void setupI2S()
     i2s_set_pin(0, NULL);
 #else
     i2s_pin_config_t pin_config = {
-        .bck_io_num = CONFIG_I2S_BCK_PIN,
-        .ws_io_num = CONFIG_I2S_LRCK_PIN,
-        .data_out_num = CONFIG_I2S_DATA_PIN,
+        .bck_io_num = CONFIG_I2S_BCK_GPIO,
+        .ws_io_num = CONFIG_I2S_LRCK_GPIO,
+        .data_out_num = CONFIG_I2S_DATA_GPIO,
         .data_in_num = -1 //Not used
     };
 
