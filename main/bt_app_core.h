@@ -37,9 +37,14 @@ typedef struct {
 typedef void (* bt_app_copy_cb_t) (bt_app_msg_t *msg, void *p_dest, void *p_src);
 
 /**
- * @brief     work dispatcher for the application task
+ * @brief     work dispatcher for the application task. Do not call from ISRs
  */
 bool bt_app_work_dispatch(bt_app_cb_t p_cback, uint16_t event, void *p_params, int param_len, bt_app_copy_cb_t p_copy_cback);
+
+// Create an app message and send to task queue.
+// Version of bt_app_work_dispatch that can
+// be called from an ISR
+bool bt_app_work_interrupt_dispatch(bt_app_cb_t p_cback, uint16_t event, void *p_params, int param_len, bt_app_copy_cb_t p_copy_cback);
 
 void bt_app_task_start_up(void);
 

@@ -63,6 +63,8 @@ bool do_dispatch(uint16_t msg_sig, bt_app_cb_t p_cback, uint16_t event, void *p_
         }
         else if (msg_sig == BT_APP_SIG_INTR_WORK_DISPATCH)
         {
+            // Change msg sig back to 
+            msg.sig = BT_APP_SIG_WORK_DISPATCH;
             return bt_app_intr_send_msg(&msg);
         }
         else
@@ -173,7 +175,6 @@ void bt_app_task_start_up(void)
 {
     s_bt_app_task_queue = xQueueCreate(10, sizeof(bt_app_msg_t));
     xTaskCreate(bt_app_task_handler, "BtAppT", 3072, NULL, configMAX_PRIORITIES - 3, &s_bt_app_task_handle);
-    return;
 }
 
 void bt_app_task_shut_down(void)

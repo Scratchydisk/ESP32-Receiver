@@ -1,7 +1,11 @@
 {
     "files.associations": {
         "freertos.h": "c",
-        "esp_intr_alloc.h": "c"
+        "esp_intr_alloc.h": "c",
+        "bt_app_av.h": "c",
+        "timers.h": "c",
+        "xtensa_api.h": "c",
+        "app_events.h": "c"
     }
    
    

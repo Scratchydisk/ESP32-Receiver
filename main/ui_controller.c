@@ -1,10 +1,14 @@
 #include <string.h>
 #include "ui_controller.h"
+#include "app_events.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/timers.h"
 
 #include <esp_log.h>
 #include <u8g2.h>
 #include "esp_ota_ops.h"
 #include "u8g2_esp32_hal.h"
+#include "bt_app_core.h"
 
 #define UI_CONTROLLER_TAG "UI Cont"
 
@@ -40,6 +44,7 @@ typedef struct ui_current_state
     char title[MAX_LEN_TRACK_ATTRIBUTE];
     char artist[MAX_LEN_TRACK_ATTRIBUTE];
     char album[MAX_LEN_TRACK_ATTRIBUTE];
+    TickType_t changedAt; // When last state change took place
     uint32_t trackDuration;
     uint32_t trackPosition;
 } ui_current_state_t;
@@ -157,6 +162,11 @@ void ui_show_discoverable()
     drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "as");
     //drawScrollingText(u8g2_GetMaxCharHeight(&u8g2) * 3, current_state.hostName);
     drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, current_state.hostName);
+    // Show countdown to timeout of discovery mode
+    TickType_t ellapsedTicks = (xTaskGetTickCount() - current_state.changedAt);
+    TickType_t totalTicks = pdMS_TO_TICKS(CONFIG_DISCOVERY_MODE_DURATION * 1000);
+    uint8_t percentLeft = (uint8_t)((totalTicks - ellapsedTicks) / (totalTicks / 100));
+    ui_show_progress_bar(percentLeft);
 }
 
 void ui_show_connected()
@@ -257,11 +267,19 @@ void ui_controller_refresh()
     u8g2_SendBuffer(&u8g2);
 }
 
+// Turns off discovery mode when called from timer
+void discovery_off_timer_cb(xTimerHandle timer)
+{
+    bt_app_work_dispatch(bt_av_hdl_stack_evt, BT_APP_EVT_DISCOVEARBLE_OFF, NULL, 0, NULL);
+    xTimerDelete(timer, 0);
+}
+
 /************************************
  * Decide what to do based upon the UI event passed.
  */
 void ui_controller_dispatch(ui_msg_t *msg)
 {
+    TimerHandle_t timer;
     uint8_t copyOffset;
 
     ESP_LOGI(UI_CONTROLLER_TAG, "Dispatch");
@@ -270,15 +288,30 @@ void ui_controller_dispatch(ui_msg_t *msg)
     // Lock the state model
     portENTER_CRITICAL(&state_mutex);
 
+    current_state.changedAt = xTaskGetTickCount();
+
     switch (msg->event)
     {
     case UI_EVT_NON_DISCOVERABLE:
         rcvr_state = RCVR_STATE_DISCONNECTED;
-        strncpy(current_state.hostName, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
-        current_state.hostName[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
+        if (param != NULL)
+        {
+            strncpy(current_state.hostName, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+            current_state.hostName[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
+        }
         break;
     case UI_EVT_DISCOVERABLE:
         rcvr_state = RCVR_STATE_DISCOVERABLE;
+        // Start timer to stop discoverable after the period
+        // defined in the config file.
+        timer = xTimerCreate(
+            "timer",
+            // Config duration is in seconds
+            pdMS_TO_TICKS(CONFIG_DISCOVERY_MODE_DURATION * 1000),
+            pdFALSE,                 // single shot
+            (void *)1,               // timer ID
+            discovery_off_timer_cb); // callback
+        xTimerStart(timer, 0);       // block time = 0
         break;
     case UI_EVT_CONNECTED:
         rcvr_state = RCVR_STATE_CONNECTED;
@@ -325,6 +358,11 @@ void ui_controller_dispatch(ui_msg_t *msg)
     }
 
     portEXIT_CRITICAL(&state_mutex);
+
+    // if(msg->event == UI_EVT_DISCOVERABLE)
+    // {
+    //     vTaskStartScheduler();
+    // }
 }
 
 /**

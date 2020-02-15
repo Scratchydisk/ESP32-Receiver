@@ -47,6 +47,7 @@ state Discoverable{
     Pairing --> Waiting : [Failure]
 }
 
+Discoverable : OnEntry: Start timeout task
 Discoverable -u--> NonDiscoverable : [Timeout] \n UI_EVT_NON_DISCOVERABLE
 
 @enduml

@@ -1,3 +1,7 @@
+/******
+ * Events handled by the UI controller
+ ******/
+
 #ifndef __UI_EVENTS_H__
 #define __UI_EVENTS_H__
 
