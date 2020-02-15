@@ -8,6 +8,8 @@
 #include "ui_task.h"
 #include "esp_bt_device.h"
 
+volatile ui_rcvr_state_t rcvr_state = RCVR_STATE_INITIALISING;
+
 void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 {
     switch (event)
@@ -92,14 +94,15 @@ void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
     case BT_APP_EVT_DISCOVEARBLE_ON:
         ESP_LOGI(BT_AV_TAG, "Start discoverable on");
         // If currently in discoverable mode just ignore this
-        
-// TODO: NEED access to state here
-
-        /* set discoverable mode, wait to be paired */
-        esp_bt_gap_set_scan_mode(ESP_BT_NON_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
-        // Send discoverable UI event (no param sent)
-        //-This should be a state change, UI driven from that
-        ui_work_dispatch(UI_EVT_DISCOVERABLE, NULL, 0, NULL);
+        if (rcvr_state != RCVR_STATE_DISCOVERABLE)
+        {
+            ESP_LOGI(BT_AV_TAG, "Enabling discoverable mode");
+            /* set discoverable mode, wait to be paired */
+            esp_bt_gap_set_scan_mode(ESP_BT_NON_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
+            // Send discoverable UI event (no param sent)
+            //-This should be a state change, UI driven from that
+            ui_work_dispatch(UI_EVT_DISCOVERABLE, NULL, 0, NULL);
+        }
         ESP_LOGI(BT_AV_TAG, "End discoverable on");
         break;
     case BT_APP_EVT_DISCOVEARBLE_OFF:

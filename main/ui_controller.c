@@ -23,19 +23,6 @@ static portMUX_TYPE state_mutex = portMUX_INITIALIZER_UNLOCKED;
 
 #define MAX_LEN_TRACK_ATTRIBUTE 80
 
-typedef enum
-{
-    RCVR_STATE_INITIALISING,
-    RCVR_STATE_DISCOVERABLE,
-    RCVR_STATE_PAIRED,
-    RCVR_STATE_CONNECTED,
-    RCVR_STATE_DISCONNECTED,
-    RCVR_STATE_STOPPED,
-    RCVR_STATE_PLAYING
-} ui_rcvr_state_t;
-
-volatile ui_rcvr_state_t rcvr_state = RCVR_STATE_INITIALISING;
-
 typedef struct ui_current_state
 {
     char connectedTo[MAX_LEN_TRACK_ATTRIBUTE];

@@ -18,4 +18,17 @@ enum
     BT_APP_EVT_DISCOVEARBLE_OFF
 } app_evt_t;
 
+typedef enum
+{
+    RCVR_STATE_INITIALISING,
+    RCVR_STATE_DISCOVERABLE,
+    RCVR_STATE_PAIRED,
+    RCVR_STATE_CONNECTED,
+    RCVR_STATE_DISCONNECTED,
+    RCVR_STATE_STOPPED,
+    RCVR_STATE_PLAYING
+} ui_rcvr_state_t;
+
+extern volatile ui_rcvr_state_t rcvr_state;
+
 #endif
