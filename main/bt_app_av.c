@@ -147,7 +147,8 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_DISCONNECTED)
         {
             ui_work_dispatch(UI_EVT_DISCONNECTED, &params, sizeof(esp_ui_param_t), NULL);
-            esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
+            //esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
+            esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_NON_DISCOVERABLE);
             bt_i2s_task_shut_down();
         }
         else if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_CONNECTED)
@@ -246,8 +247,10 @@ static void bt_av_play_pos_changed(uint32_t position)
     params.int_rsp.evt_value = position;
     ui_work_dispatch(UI_EVT_TRK_POS_CHANGED, &params, sizeof(esp_ui_param_t), NULL);
 
-    if (esp_avrc_rn_evt_bit_mask_operation(ESP_AVRC_BIT_MASK_OP_TEST, &s_avrc_peer_rn_cap,
-                                           ESP_AVRC_RN_PLAY_POS_CHANGED))
+    if (esp_avrc_rn_evt_bit_mask_operation(
+            ESP_AVRC_BIT_MASK_OP_TEST, 
+            &s_avrc_peer_rn_cap,
+            ESP_AVRC_RN_PLAY_POS_CHANGED))
     {
         esp_avrc_ct_send_register_notification_cmd(APP_RC_CT_TL_RN_PLAY_POS_CHANGE, ESP_AVRC_RN_PLAY_POS_CHANGED, 10);
     }
@@ -319,8 +322,8 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
             break;
         case ESP_AVRC_MD_ATTR_ALBUM:
             ESP_LOGI("Track", "Album: %s", rc->meta_rsp.attr_text);
-         //   ui_copyStrToTextParam(&params, (const uint8_t *)rc->meta_rsp.attr_text);
-         //   ui_work_dispatch(UI_EVT_TRK_ARTIST, &params, sizeof(esp_ui_param_t), NULL);
+            //   ui_copyStrToTextParam(&params, (const uint8_t *)rc->meta_rsp.attr_text);
+            //   ui_work_dispatch(UI_EVT_TRK_ARTIST, &params, sizeof(esp_ui_param_t), NULL);
             break;
         case ESP_AVRC_MD_ATTR_GENRE:
             ESP_LOGI("Track", "Genre: %s", rc->meta_rsp.attr_text);

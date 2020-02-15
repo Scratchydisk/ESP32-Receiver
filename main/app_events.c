@@ -22,12 +22,13 @@ void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 
             esp_ui_param_t params;
             ui_copyStrToTextParam(&params, (const uint8_t *)param->auth_cmpl.device_name);
-            ui_work_dispatch(UI_EVT_PAIRED, &params, sizeof(esp_ui_param_t), NULL);
+            ui_work_dispatch(UI_EVT_PAIRED_OK, &params, sizeof(esp_ui_param_t), NULL);
             esp_log_buffer_hex(BT_AV_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
         }
         else
         {
             ESP_LOGE(BT_AV_TAG, "authentication failed, status:%d", param->auth_cmpl.stat);
+            ui_work_dispatch(UI_EVT_PAIRED_FAIL, NULL, 0, NULL);
         }
         break;
     }
@@ -35,7 +36,23 @@ void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 #if (CONFIG_BT_SSP_ENABLED == true)
     case ESP_BT_GAP_CFM_REQ_EVT:
         ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %d", param->cfm_req.num_val);
-        esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
+        char pairingPin[7];
+        // Enforce 6 digits (leading zeros)
+        snprintf(pairingPin, 7, "%06d", param->cfm_req.num_val);
+        esp_ui_param_t params;  
+        ui_copyStrToTextParam(&params, (const uint8_t *)pairingPin);
+        ui_work_dispatch(UI_EVT_PAIRING_AUTH, &params, sizeof(esp_ui_param_t), NULL);
+        // esp_err_t status = esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
+        // if(status == ESP_OK)
+        // {
+        //     ESP_LOGI(BT_AV_TAG, "Paired with %s", param->cfm_req.bda);
+        //     ui_work_dispatch(UI_EVT_PAIRED_OK, NULL, 0, NULL);
+        // }
+        // else
+        // {
+        //     ESP_LOGI(BT_AV_TAG, "Pairing failed");
+        //     ui_work_dispatch(UI_EVT_PAIRED_FAIL, NULL, 0, NULL);
+        // }
         break;
     case ESP_BT_GAP_KEY_NOTIF_EVT:
         ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey:%d", param->key_notif.passkey);
@@ -98,7 +115,7 @@ void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
         {
             ESP_LOGI(BT_AV_TAG, "Enabling discoverable mode");
             /* set discoverable mode, wait to be paired */
-            esp_bt_gap_set_scan_mode(ESP_BT_NON_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
+            esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
             // Send discoverable UI event (no param sent)
             //-This should be a state change, UI driven from that
             ui_work_dispatch(UI_EVT_DISCOVERABLE, NULL, 0, NULL);

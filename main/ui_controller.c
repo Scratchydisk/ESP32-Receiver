@@ -31,6 +31,7 @@ typedef struct ui_current_state
     char title[MAX_LEN_TRACK_ATTRIBUTE];
     char artist[MAX_LEN_TRACK_ATTRIBUTE];
     char album[MAX_LEN_TRACK_ATTRIBUTE];
+    char pairingPin[7];
     TickType_t changedAt; // When last state change took place
     uint32_t trackDuration;
     uint32_t trackPosition;
@@ -149,6 +150,7 @@ void ui_show_discoverable()
     drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "as");
     //drawScrollingText(u8g2_GetMaxCharHeight(&u8g2) * 3, current_state.hostName);
     drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, current_state.hostName);
+    
     // Show countdown to timeout of discovery mode
     TickType_t ellapsedTicks = (xTaskGetTickCount() - current_state.changedAt);
     TickType_t totalTicks = pdMS_TO_TICKS(CONFIG_DISCOVERY_MODE_DURATION * 1000);
@@ -204,14 +206,35 @@ void ui_show_track()
     }
 }
 
+void ui_show_pairing_failed()
+{
+    u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "Pairing");
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, "Failed");
+}
+
+// If there's a pairing pin then show it
+void ui_show_pairing()
+{
+    u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 1, "Pairing");
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "PIN");
+
+    if (strlen(current_state.pairingPin) > 0)
+    {
+        u8g2_SetFont(&u8g2, u8g2_font_osr21_tn);
+        drawStrCentered(u8g2_GetDisplayHeight(&u8g2), current_state.pairingPin);
+    }
+}
+
 void ui_show_paired()
 {
     //u8g2_SetFont(&u8g2, u8g2_font_ncenB14_tr);
     u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
 
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2), "Paired");
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "with");
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, current_state.pairedWith);
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "Pairing");
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, "Successful");
+    // drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, current_state.pairedWith);
 }
 
 // Draws screen, driven by current state
@@ -232,6 +255,12 @@ void ui_controller_refresh()
         break;
     case RCVR_STATE_PAIRED:
         ui_show_paired();
+        break;
+    case RCVR_STATE_PAIRED_FAIL:
+        ui_show_pairing_failed();
+        break;
+    case RCVR_STATE_PARING:
+        ui_show_pairing();
         break;
     case RCVR_STATE_PLAYING:
         ui_show_track();
@@ -309,10 +338,21 @@ void ui_controller_dispatch(ui_msg_t *msg)
         rcvr_state = RCVR_STATE_DISCONNECTED;
         current_state.connectedTo[0] = '\0';
         break;
-    case UI_EVT_PAIRED:
+    case UI_EVT_PAIRED_FAIL:
+        rcvr_state = RCVR_STATE_PAIRED_FAIL;
+        current_state.pairingPin[0] = 0;
+        break;
+    case UI_EVT_PAIRED_OK:
         rcvr_state = RCVR_STATE_PAIRED;
-        strncpy(current_state.pairedWith, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
-        current_state.pairedWith[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
+        current_state.pairingPin[0] = 0;
+        // strncpy(current_state.pairedWith, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
+        //current_state.pairedWith[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
+        break;
+    case UI_EVT_PAIRING_AUTH:
+        rcvr_state = RCVR_STATE_PARING;
+        // Check value is 6 digits
+        strncpy(current_state.pairingPin, (char *)param->text_rsp.evt_text, 7);
+        current_state.pairingPin[6] = '\0';
         break;
     case UI_EVT_TRK_STARTED:
         rcvr_state = RCVR_STATE_PLAYING;
@@ -375,6 +415,6 @@ void ui_controller_init()
     u8x8_SetI2CAddress(&u8g2.u8x8, CONFIG_DISPLAY_I2C_ADDRESS);
     u8g2_InitDisplay(&u8g2);     // send init sequence to the display, display is in sleep mode after this,
     u8g2_SetPowerSave(&u8g2, 0); // wake up display
-    // Initialise half brightness
-    u8g2_SetContrast(&u8g2, 127);
+    // Initialise lowish brightness
+    u8g2_SetContrast(&u8g2, 64);
 }

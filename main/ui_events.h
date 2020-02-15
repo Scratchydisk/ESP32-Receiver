@@ -11,12 +11,14 @@ typedef enum
 {
     UI_EVT_NON_DISCOVERABLE, // System initialised to NonDiscoverable state
     UI_EVT_DISCOVERABLE,     // User has pressed discoverable button
-    UI_EVT_PAIRED,           // Device has paired to the receiver - contains request check value
+    UI_EVT_PAIRING_AUTH,     // Authentication phase of pairing
+    UI_EVT_PAIRED_OK,        // Device has paired to the receiver
+    UI_EVT_PAIRED_FAIL,      // Device failed pairing authentication
     UI_EVT_CONNECTED,        // Device has connected to receiver
     UI_EVT_DISCONNECTED,     // Device has disconnected from receiver
     UI_EVT_TRK_STARTED,      // Device has started playing a track
     UI_EVT_TRK_STOPPED,      // Track has stopped playing
-    UI_EVT_TRK_POS_CHANGED, // Position within track has changed
+    UI_EVT_TRK_POS_CHANGED,  // Position within track has changed
     UI_EVT_TRK_TITLE,        // Received track title
     UI_EVT_TRK_ARTIST,       // Received track's artist
     UI_EVT_TRK_ALBUM,        // Received track's album
