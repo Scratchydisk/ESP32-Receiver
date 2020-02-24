@@ -1,6 +1,8 @@
 ESP-IDF Based Bluetooth Receiver
 ================================
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/c9eabd855b094eaa823e9782223c4a84)](https://app.codacy.com/manual/Scratchydisk/ESP32-Receiver?utm_source=github.com&utm_medium=referral&utm_content=Scratchydisk/ESP32-Receiver&utm_campaign=Badge_Grade_Settings)
+
 Using the IDF A2DP Sink example as a starting point.
 
 Will update when (if) it's finished!
