@@ -1,3 +1,4 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/c9eabd855b094eaa823e9782223c4a84)](https://app.codacy.com/manual/Scratchydisk/ESP32-Receiver?utm_source=github.com&utm_medium=referral&utm_content=Scratchydisk/ESP32-Receiver&utm_campaign=Badge_Grade_Dashboard)
 [![CodeScene general](https://codescene.io/images/analyzed-by-codescene-badge.svg)](https://codescene.io/projects/7170)
 
 ESP-IDF Based Bluetooth Receiver
