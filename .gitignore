@@ -1,3 +1,6 @@
 build/
 sdkconfig.old
 .vs/
+
+# Dump files used by cppcheck
+main/*.dump

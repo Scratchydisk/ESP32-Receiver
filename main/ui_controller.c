@@ -21,16 +21,16 @@ static portMUX_TYPE state_mutex = portMUX_INITIALIZER_UNLOCKED;
  * Model for screen data
  * *******/
 
-#define MAX_LEN_TRACK_ATTRIBUTE 80
+#define MAX_STR_ATTRIBUTE_LENGTH 80
 
 typedef struct ui_current_state
 {
-    char connectedTo[MAX_LEN_TRACK_ATTRIBUTE];
-    char hostName[MAX_LEN_TRACK_ATTRIBUTE];
-    char pairedWith[MAX_LEN_TRACK_ATTRIBUTE];
-    char title[MAX_LEN_TRACK_ATTRIBUTE];
-    char artist[MAX_LEN_TRACK_ATTRIBUTE];
-    char album[MAX_LEN_TRACK_ATTRIBUTE];
+    char connectedTo[MAX_STR_ATTRIBUTE_LENGTH];
+    char hostName[MAX_STR_ATTRIBUTE_LENGTH];
+    char pairedWith[MAX_STR_ATTRIBUTE_LENGTH];
+    char title[MAX_STR_ATTRIBUTE_LENGTH];
+    char artist[MAX_STR_ATTRIBUTE_LENGTH];
+    char album[MAX_STR_ATTRIBUTE_LENGTH];
     char pairingPin[7];
     TickType_t changedAt; // When last state change took place
     uint32_t trackDuration;
@@ -52,7 +52,7 @@ void ui_controller_refresh();
 typedef struct ui_scrolling_text
 {
     uint8_t *font;     // font used to draw text
-    const char *str;   // text to draw
+    char str[MAX_STR_ATTRIBUTE_LENGTH];   // text to draw
     u8g2_uint_t y;     // bottom of the text line in pixels
     uint16_t strWidth; // Calculated width of string in pixels
     uint16_t x;        // current x pos of start of text line
@@ -86,7 +86,7 @@ void ui_controller_scroll_line(ui_scrolling_text_t line)
 // Scrolls any scrolling text (just one line for testing)
 void ui_controller_scroll_text()
 {
-    if (strlen(scrollLine.str) > 0)
+    if (strnlen(scrollLine.str, MAX_STR_ATTRIBUTE_LENGTH) > 0)
     {
         ui_controller_scroll_line(scrollLine);
     }
@@ -96,7 +96,7 @@ void ui_controller_scroll_text()
 void drawScrollingText(u8g2_uint_t y, const char *str)
 {
     scrollLine.font = (uint8_t *)u8g2.font;
-    scrollLine.str = str;
+    strlcpy(str, scrollLine.str, MAX_STR_ATTRIBUTE_LENGTH);
     scrollLine.y = y;
     scrollLine.strWidth = u8g2_GetStrWidth(&u8g2, str);
     scrollLine.x = 0;
@@ -104,7 +104,7 @@ void drawScrollingText(u8g2_uint_t y, const char *str)
 
 void stopScrollingText()
 {
-    scrollLine.str = NULL;
+    scrollLine.str[0] = NULL;
 }
 
 /** Drawing helpers **/
@@ -197,10 +197,10 @@ void ui_show_track()
         drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, current_state.album);
 
         // Avoid divide by zero (no guarantee duration is set)
-        if (current_state.trackDuration > 100)
+        if (current_state.trackDuration > (uint32_t)100)
         {
             // Times in ms, don't need this resolution, rather than mul numerator by 100, divide denominator by 100
-            uint8_t progress = current_state.trackPosition / (current_state.trackDuration / 100);
+            uint8_t progress = current_state.trackPosition / (current_state.trackDuration / (uint32_t)100);
             ui_show_progress_bar(progress);
         }
     }
@@ -220,7 +220,7 @@ void ui_show_pairing()
     drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 1, "Pairing");
     drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "PIN");
 
-    if (strlen(current_state.pairingPin) > 0)
+    if (strnlen(current_state.pairingPin, 7) > (size_t)0)
     {
         u8g2_SetFont(&u8g2, u8g2_font_osr21_tn);
         drawStrCentered(u8g2_GetDisplayHeight(&u8g2), current_state.pairingPin);
@@ -312,8 +312,8 @@ void ui_controller_dispatch(ui_msg_t *msg)
         rcvr_state = RCVR_STATE_DISCONNECTED;
         if (param != NULL)
         {
-            strncpy(current_state.hostName, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
-            current_state.hostName[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
+            strncpy(current_state.hostName, (char *)param->text_rsp.evt_text, MAX_STR_ATTRIBUTE_LENGTH);
+            current_state.hostName[MAX_STR_ATTRIBUTE_LENGTH - 1] = '\0';
         }
         break;
     case UI_EVT_DISCOVERABLE:
@@ -331,28 +331,24 @@ void ui_controller_dispatch(ui_msg_t *msg)
         break;
     case UI_EVT_CONNECTED:
         rcvr_state = RCVR_STATE_CONNECTED;
-        strncpy(current_state.connectedTo, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
-        current_state.connectedTo[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
+        strlcpy(current_state.connectedTo, (char *)param->text_rsp.evt_text, MAX_STR_ATTRIBUTE_LENGTH);
         break;
     case UI_EVT_DISCONNECTED:
         rcvr_state = RCVR_STATE_DISCONNECTED;
-        current_state.connectedTo[0] = '\0';
+        current_state.connectedTo[0] = NULL;
         break;
     case UI_EVT_PAIRED_FAIL:
         rcvr_state = RCVR_STATE_PAIRED_FAIL;
-        current_state.pairingPin[0] = 0;
+        current_state.pairingPin[0] = NULL;
         break;
     case UI_EVT_PAIRED_OK:
         rcvr_state = RCVR_STATE_PAIRED;
-        current_state.pairingPin[0] = 0;
-        // strncpy(current_state.pairedWith, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
-        //current_state.pairedWith[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
+        current_state.pairingPin[0] = NULL;
         break;
     case UI_EVT_PAIRING_AUTH:
         rcvr_state = RCVR_STATE_PARING;
         // Check value is 6 digits
-        strncpy(current_state.pairingPin, (char *)param->text_rsp.evt_text, 7);
-        current_state.pairingPin[6] = '\0';
+        strlcpy(current_state.pairingPin, (char *)param->text_rsp.evt_text, 7);
         break;
     case UI_EVT_TRK_STARTED:
         rcvr_state = RCVR_STATE_PLAYING;
@@ -365,19 +361,16 @@ void ui_controller_dispatch(ui_msg_t *msg)
         break;
     case UI_EVT_TRK_ALBUM:
         // Some album names have extraneous '/'s as their first char, remove this
-        strncpy(current_state.album, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
-        current_state.album[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
+        strlcpy(current_state.album, (char *)param->text_rsp.evt_text, MAX_STR_ATTRIBUTE_LENGTH);
         break;
     case UI_EVT_TRK_ARTIST:
-        strncpy(current_state.artist, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
-        current_state.artist[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
+        strlcpy(current_state.artist, (char *)param->text_rsp.evt_text, MAX_STR_ATTRIBUTE_LENGTH);
         break;
     case UI_EVT_TRK_PLAYINGTIME:
         current_state.trackDuration = param->int_rsp.evt_value;
         break;
     case UI_EVT_TRK_TITLE:
-        strncpy(current_state.title, (char *)param->text_rsp.evt_text, MAX_LEN_TRACK_ATTRIBUTE);
-        current_state.title[MAX_LEN_TRACK_ATTRIBUTE - 1] = '\0';
+        strlcpy(current_state.title, (char *)param->text_rsp.evt_text, MAX_STR_ATTRIBUTE_LENGTH);
         break;
     default:
         ui_show_about();
