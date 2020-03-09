@@ -42,17 +42,22 @@ void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
         esp_ui_param_t params;  
         ui_copyStrToTextParam(&params, (const uint8_t *)pairingPin);
         ui_work_dispatch(UI_EVT_PAIRING_AUTH, &params, sizeof(esp_ui_param_t), NULL);
-        // esp_err_t status = esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
-        // if(status == ESP_OK)
-        // {
-        //     ESP_LOGI(BT_AV_TAG, "Paired with %s", param->cfm_req.bda);
-        //     ui_work_dispatch(UI_EVT_PAIRED_OK, NULL, 0, NULL);
-        // }
-        // else
-        // {
-        //     ESP_LOGI(BT_AV_TAG, "Pairing failed");
-        //     ui_work_dispatch(UI_EVT_PAIRED_FAIL, NULL, 0, NULL);
-        // }
+        esp_err_t status = esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
+        if(status == ESP_OK)
+        {
+            ESP_LOGI(BT_AV_TAG, "Paired with %s", param->cfm_req.bda);
+            ui_work_dispatch(UI_EVT_PAIRED_OK, NULL, 0, NULL);
+        }
+        else if(status ==ESP_ERR_INVALID_STATE)
+        {
+            ESP_LOGE(BT_AV_TAG, "CONFIRMATION result invalid state");
+            ui_work_dispatch(UI_EVT_PAIRED_FAIL, NULL, 0, NULL);
+        }
+        else
+        {
+            ESP_LOGI(BT_AV_TAG, "Pairing failed");
+            ui_work_dispatch(UI_EVT_PAIRED_FAIL, NULL, 0, NULL);
+        }
         break;
     case ESP_BT_GAP_KEY_NOTIF_EVT:
         ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_KEY_NOTIF_EVT passkey:%d", param->key_notif.passkey);
@@ -118,7 +123,10 @@ void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
             esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
             // Send discoverable UI event (no param sent)
             //-This should be a state change, UI driven from that
-            ui_work_dispatch(UI_EVT_DISCOVERABLE, NULL, 0, NULL);
+            esp_ui_param_t params;
+            // TODO: Parametise the legacy pairing pin code (1234)
+            ui_copyStrToTextParam(&params, (const uint8_t *)"1234");
+            ui_work_dispatch(UI_EVT_DISCOVERABLE, &params, sizeof(esp_ui_param_t), NULL);
         }
         ESP_LOGI(BT_AV_TAG, "End discoverable on");
         break;

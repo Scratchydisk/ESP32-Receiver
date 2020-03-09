@@ -31,7 +31,7 @@ typedef struct ui_current_state
     char title[MAX_STR_ATTRIBUTE_LENGTH];
     char artist[MAX_STR_ATTRIBUTE_LENGTH];
     char album[MAX_STR_ATTRIBUTE_LENGTH];
-    char pairingPin[7];
+    char pairingPINnum[7];
     TickType_t changedAt; // When last state change took place
     uint32_t trackDuration;
     uint32_t trackPosition;
@@ -51,11 +51,11 @@ void ui_controller_refresh();
 // if it's longer than the display.
 typedef struct ui_scrolling_text
 {
-    uint8_t *font;     // font used to draw text
-    char str[MAX_STR_ATTRIBUTE_LENGTH];   // text to draw
-    u8g2_uint_t y;     // bottom of the text line in pixels
-    uint16_t strWidth; // Calculated width of string in pixels
-    uint16_t x;        // current x pos of start of text line
+    uint8_t *font;                      // font used to draw text
+    char str[MAX_STR_ATTRIBUTE_LENGTH]; // text to draw
+    u8g2_uint_t y;                      // bottom of the text line in pixels
+    uint16_t strWidth;                  // Calculated width of string in pixels
+    uint16_t x;                         // current x pos of start of text line
 } ui_scrolling_text_t;
 
 // Just one line for testing
@@ -146,11 +146,16 @@ void ui_show_discoverable()
 {
     u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
 
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2), "Discoverable");
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "as");
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2), "Discoverable as");
+    //drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "as");
     //drawScrollingText(u8g2_GetMaxCharHeight(&u8g2) * 3, current_state.hostName);
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, current_state.hostName);
-    
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, current_state.hostName);
+
+    if (strnlen(current_state.pairingPINnum, 7) > (size_t)0)
+    {
+        drawStrCentered(u8g2_GetDisplayHeight(&u8g2) * 3, current_state.pairingPINnum);
+    }
+
     // Show countdown to timeout of discovery mode
     TickType_t ellapsedTicks = (xTaskGetTickCount() - current_state.changedAt);
     TickType_t totalTicks = pdMS_TO_TICKS(CONFIG_DISCOVERY_MODE_DURATION * 1000);
@@ -220,10 +225,10 @@ void ui_show_pairing()
     drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 1, "Pairing");
     drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "PIN");
 
-    if (strnlen(current_state.pairingPin, 7) > (size_t)0)
+    if (strnlen(current_state.pairingPINnum, 7) > (size_t)0)
     {
         u8g2_SetFont(&u8g2, u8g2_font_osr21_tn);
-        drawStrCentered(u8g2_GetDisplayHeight(&u8g2), current_state.pairingPin);
+        drawStrCentered(u8g2_GetDisplayHeight(&u8g2), current_state.pairingPINnum);
     }
 }
 
@@ -232,9 +237,9 @@ void ui_show_paired()
     //u8g2_SetFont(&u8g2, u8g2_font_ncenB14_tr);
     u8g2_SetFont(&u8g2, u8g2_font_unifont_t_symbols);
 
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "Pairing");
-    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, "Successful");
-    // drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, current_state.pairedWith);
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 1, "Paired");
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 2, "with");
+    drawStrCentered(u8g2_GetMaxCharHeight(&u8g2) * 3, current_state.pairedWith);
 }
 
 // Draws screen, driven by current state
@@ -312,12 +317,12 @@ void ui_controller_dispatch(ui_msg_t *msg)
         rcvr_state = RCVR_STATE_DISCONNECTED;
         if (param != NULL)
         {
-            strncpy(current_state.hostName, (char *)param->text_rsp.evt_text, MAX_STR_ATTRIBUTE_LENGTH);
-            current_state.hostName[MAX_STR_ATTRIBUTE_LENGTH - 1] = '\0';
+            strlcpy(current_state.hostName, (char *)param->text_rsp.evt_text, MAX_STR_ATTRIBUTE_LENGTH);
         }
         break;
     case UI_EVT_DISCOVERABLE:
         rcvr_state = RCVR_STATE_DISCOVERABLE;
+        strlcpy(current_state.pairingPINnum, (char *)param->text_rsp.evt_text, MAX_STR_ATTRIBUTE_LENGTH);
         // Start timer to stop discoverable after the period
         // defined in the config file.
         timer = xTimerCreate(
@@ -339,16 +344,17 @@ void ui_controller_dispatch(ui_msg_t *msg)
         break;
     case UI_EVT_PAIRED_FAIL:
         rcvr_state = RCVR_STATE_PAIRED_FAIL;
-        current_state.pairingPin[0] = NULL;
+        current_state.pairingPINnum[0] = NULL;
         break;
     case UI_EVT_PAIRED_OK:
         rcvr_state = RCVR_STATE_PAIRED;
-        current_state.pairingPin[0] = NULL;
+        strlcpy(current_state.pairedWith, (char *)param->text_rsp.evt_text, MAX_STR_ATTRIBUTE_LENGTH);
+        current_state.pairingPINnum[0] = NULL;
         break;
     case UI_EVT_PAIRING_AUTH:
         rcvr_state = RCVR_STATE_PARING;
         // Check value is 6 digits
-        strlcpy(current_state.pairingPin, (char *)param->text_rsp.evt_text, 7);
+        strlcpy(current_state.pairingPINnum, (char *)param->text_rsp.evt_text, 7);
         break;
     case UI_EVT_TRK_STARTED:
         rcvr_state = RCVR_STATE_PLAYING;
