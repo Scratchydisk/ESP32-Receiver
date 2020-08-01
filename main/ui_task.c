@@ -104,6 +104,11 @@ bool ui_work_dispatch(ui_evt_t event, void *p_params, int param_len, ui_copy_cb_
 {
     ESP_LOGD(UI_TASK_TAG, "%s event 0x%x, param len %d", __func__, event, param_len);
 
+#if (CONFIG_RUN_HEADLESS == true)
+    ESP_LOGD(UI_TASK_TAG, "Ignoring UI events");
+    return;
+#endif
+
     ui_msg_t msg;
     memset(&msg, 0, sizeof(ui_msg_t));
 
@@ -159,6 +164,3 @@ void ui_copyStrToTextParam(esp_ui_param_t *params, const uint8_t *str)
     ESP_LOGI(UI_TASK_TAG, "UI Param: len %d, txt: %s", params->text_rsp.evt_text_length,
              params->text_rsp.evt_text);
 }
-
-
-

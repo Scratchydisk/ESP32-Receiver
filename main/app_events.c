@@ -33,15 +33,18 @@ void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
         break;
     }
 
+// Review SSP in light of https://github.com/espressif/esp-idf/issues/2272
 #if (CONFIG_BT_SSP_ENABLED == true)
     case ESP_BT_GAP_CFM_REQ_EVT:
         ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %d", param->cfm_req.num_val);
+       
         char pairingPin[7];
         // Enforce 6 digits (leading zeros)
         snprintf(pairingPin, 7, "%06d", param->cfm_req.num_val);
         esp_ui_param_t params;  
         ui_copyStrToTextParam(&params, (const uint8_t *)pairingPin);
         ui_work_dispatch(UI_EVT_PAIRING_AUTH, &params, sizeof(esp_ui_param_t), NULL);
+
         esp_err_t status = esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
         if(status == ESP_OK)
         {

@@ -115,8 +115,8 @@ void setupI2S()
 #else
         .mode = I2S_MODE_MASTER | I2S_MODE_TX, // Only TX
 #endif
-        .sample_rate = 96000, // 44100,
-        .bits_per_sample = 24,
+        .sample_rate = 44100,
+        .bits_per_sample = 16,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT, //2-channels
 #ifdef CONFIG_A2DP_SINK_OUTPUT_EXTERNAL_PCM
         .communication_format = I2S_COMM_FORMAT_PCM_MSB,

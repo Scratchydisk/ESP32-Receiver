@@ -304,7 +304,17 @@ void ui_controller_dispatch(ui_msg_t *msg)
     uint8_t copyOffset;
 
     ESP_LOGI(UI_CONTROLLER_TAG, "Dispatch");
+
     esp_ui_param_t *param = (esp_ui_param_t *)(msg->param);
+
+    // if (param->text_rsp != NULL)
+    // {
+    //     ESP_LOGI(UI_CONTROLLER_TAG, "Param Txt Len: %d", param->text_rsp.evt_text_length);
+    //     if (param->text_rsp.evt_text_length > 0)
+    //     {
+    //         ESP_LOGI(UI_CONTROLLER_TAG, "Param Txt: %s", param->text_rsp.evt_text);
+    //     }
+    // }
 
     // Lock the state model
     portENTER_CRITICAL(&state_mutex);
@@ -348,7 +358,14 @@ void ui_controller_dispatch(ui_msg_t *msg)
         break;
     case UI_EVT_PAIRED_OK:
         rcvr_state = RCVR_STATE_PAIRED;
-        strlcpy(current_state.pairedWith, (char *)param->text_rsp.evt_text, MAX_STR_ATTRIBUTE_LENGTH);
+        // if (param->text_rsp.evt_text_length > 0)
+        // {
+        //     strlcpy(current_state.pairedWith, (char *)param->text_rsp.evt_text, MAX_STR_ATTRIBUTE_LENGTH);
+        // }
+        // else
+        // {
+        //     strlcpy(current_state.pairedWith, "No Name", MAX_STR_ATTRIBUTE_LENGTH);
+        // }
         current_state.pairingPINnum[0] = NULL;
         break;
     case UI_EVT_PAIRING_AUTH:
